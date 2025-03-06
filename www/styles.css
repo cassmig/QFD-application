@@ -1,0 +1,1327 @@
+ body {
+        background-image: url('https://img.freepik.com/vecteurs-libre/arriere-plan-conception-texture-aquarelle-vert-doux_1055-21613.jpg?size=626&ext=jpg&ga=GA1.1.2103296394.1701424685&semt=ais_hybrid');
+        background-size: cover;
+        background-attachment: fixed;
+        background-position: center;
+        background-repeat: no-repeat;
+        font-family: 'Arial', sans-serif;
+        color: #333;
+      }
+      
+      .modal-header, .modal-body {
+        font-size: 18px;  // Ajustez selon vos besoins pour la lisibilité
+      }
+      .modal-title {
+        color: #D32F2F;  // Rouge pour l'erreur, vous pouvez changer selon le contexte
+      }
+      .modal-success-title {
+        color: #4CAF50;  // Vert pour le succès
+      }
+      .fa {  // Icônes pour le modal
+        margin-right: 10px;
+      }
+
+    .error-icon {
+        color: #ff0000; /* Couleur rouge pour l'icône d'erreur */
+        margin-right: 5px; /* Espace après l'icône */
+    }
+      
+      .success-icon {
+        color: #4CAF50;  // Icône verte pour le succès
+      }
+      @keyframes fadeIn {
+        from {opacity: 0;}
+        to {opacity: 1;}
+      }
+      .modal-body {
+        animation: fadeIn 1s ease-in-out;  // Animation pour faire apparaître le texte du modal
+      }
+      
+      .header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        background: linear-gradient(270deg, 
+          #8BB343 0%, 
+          #59973E 10%, 
+          #36883B 20%, 
+          #007436 40%, 
+          #005F30 60%, 
+          #004422 80%, 
+          #002912 100%);
+        background-size: 400% 400%;
+        color: white;
+        height: 70px;
+        font-size: 16px;
+        font-weight: bold;
+        animation: gradientShift 10s ease infinite;
+      }
+      .header img {
+        height: 50px;
+        margin-right: 20px;
+      }
+      .title {
+        margin-right: 20px;
+        padding-right: 20px;
+        border-right: 1px solid white;
+        height: 40%;
+        display: flex;
+        align-items: center;
+      }
+      .nav-section {
+        flex-grow: 1;
+        text-align: center;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 16px;
+        border-right: 1px solid white;
+        height: 40%;
+        padding-top: 0px;
+        padding-bottom: 0px;
+      }
+      .nav-section:first-child {
+        margin-left: 20px;
+      }
+      .nav-section:last-child {
+        border-right: none;
+      }
+      .nav-section i {
+        margin-right: 5px;
+        color: white;
+      }
+      .nav-section .second-icon {
+        margin-left: 5px;
+        color: white;
+      }
+      @keyframes gradientShift {
+        0% { background-position: 0% 50%; }
+        50% { background-position: 100% 50%; }
+        100% { background-position: 0% 50%; }
+      }
+      .intro-text {
+        margin: 20px;
+        padding: 15px;
+        background-color: rgba(255, 255, 255, 0.8);
+        border-left: 5px solid #007436;
+        font-family: 'Arial', sans-serif;
+        font-size: 14px;
+        line-height: 1.6;
+        color: #333;
+        border-radius: 5px;
+        box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+      }
+      .intro-text strong {
+        font-weight: bold;
+      }
+      .intro-text em {
+        font-style: italic;
+      }
+      .intro-text a {
+        color: #007436;
+        font-weight: bold;
+        text-decoration: none;
+      }
+      .intro-text a:hover {
+        text-decoration: underline;
+      }
+      .select-source {
+        margin: 10px;
+        padding: 8px 16px;
+        border: 2px solid #007436;
+        border-radius: 4px;
+        font-size: 14px;
+        font-weight: bold;
+        background-color: white;
+        color: #005F30;
+        box-shadow: 0 3px 6px rgba(0, 0, 0, 0.1);
+        transition: background-color 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease;
+        display: inline-block;
+        text-transform: capitalize;
+        width: 250px; /* Réduit la largeur de l'encadré */
+        height: 75px;
+      }
+      .select-source:hover {
+        background-color: #f4f4f4;
+        border-color: #004d26;
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+      }
+      .select-source option {
+        color: #005F30;
+        height: 5px;
+      }
+      
+      .select-source select {
+    width: 100%;/* Le menu déroulant prend toute la largeur du conteneur */
+    height: 5px;
+    padding: 5px; /* Ajout d'un peu de padding à l'intérieur */
+    font-size: 14px; /* Taille du texte dans le menu */
+      }
+  
+      .green-box {
+        margin: 20px;
+        width: 650px; /* Même largeur que le carré de sélection de la source */
+        height: 75px; /* Hauteur réduite du carré vert */
+        background-color: #007436;
+        border-radius: 4px;
+        box-shadow: 0 3px 6px rgba(0, 0, 0, 0.1);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        position: relative;
+        border: 2px solid white; /* Ajouter un contour blanc */
+      }
+      .file-input {
+        position: absolute;
+        width: 100%;
+        height: 100%;
+        opacity: 0;
+        cursor: pointer;
+      }
+      
+      .upload-button {
+        background-color: #fff;
+        color: #007436;
+        border: none;
+        border-radius: 4px;
+        padding: 8px 16px;
+        font-size: 14px;
+        font-weight: bold;
+        display: flex;
+        align-items: center;
+        cursor: pointer;
+        box-shadow: 0 3px 6px rgba(0, 0, 0, 0.1);
+        transition: background-color 0.3s ease, box-shadow 0.3s ease;
+        width: 120px; /* Largeur fixe pour uniformité */
+        height: 35px; /* Hauteur fixe pour uniformité */
+      }
+      .upload-button:hover {
+        background-color: #f4f4f4;
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+      }
+      .upload-button i {
+        margin-right: 8px;
+      }
+      
+        .file-name-container {
+        background-color: white;
+        display: flex;
+        align-items: center;
+        padding: 8px 16px;
+        border-radius: 4px;
+        height: 100%; /* Correspond à la hauteur du bouton Upload */
+        margin-left: 10px;
+        box-shadow: 0 3px 6px rgba(0, 0, 0, 0.1);
+        border: 1px solid #ddd; /* Optionnel : ajout d'un contour léger */
+            }
+      
+      .load-button {
+        background-color: #006400;
+        color: #fff;
+        border: 2px solid #007436;
+        border-radius: 4px;
+        padding: 8px 16px;
+        font-size: 14px;
+        font-weight: bold; /* Texte en gras */
+        margin-left: 10px;
+        cursor: pointer;
+        box-shadow: 0 3px 6px rgba(0, 0, 0, 0.1);
+        transition: background-color 0.3s ease, box-shadow 0.3s ease;
+        text-transform: uppercase; /* En majuscules */
+      }
+      .load-button:hover {
+        background-color: #f4f4f4;
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+      }
+      
+      .load-button-container {
+    display: flex; /* Utilise Flexbox */
+    width: 250px; 
+    justify-content: center; /* Centre horizontalement */
+    align-items: center; /* Centre verticalement */
+    height: 10à%; /* Utilise toute la hauteur du conteneur parent */
+  }
+
+      /* Classe pour l'animation de clignotement */
+      @keyframes blink {
+        0%, 100% { background-color: #006400; } /* Vert foncé */
+        50% { background-color: #66C266; } /* Vert clair, mais pas fluo */
+
+      }
+      .blink {
+        animation: blink 3s linear infinite; /* Réduit la vitesse du clignotement */
+      }
+      .no-blink {
+        animation: none; /* Arrête l'animation */
+      }
+      .alert-text {
+        font-weight: bold; /* Texte en gras */
+        color: #ff0000; /* Couleur rouge pour attirer l'attention */
+        
+      }
+.modal-dialog .modal-content {
+    background-color: rgba(0, 0, 0, 0.8); /* Fond sombre pour tout le contenu du modal */
+    color: white; /* Texte en blanc pour tout le contenu */
+}
+
+.message-text {
+    font-size: 14px; /* Taille de police réduite pour les messages */
+    color: white; /* Assurez-vous que le texte reste blanc pour être lisible */
+}
+
+.blinking-error {
+    background-color: #cc0000; /* Rouge plus puissant */
+    color: white;
+    padding: 10px;
+    font-size: 15px; /* Taille de police augmentée */
+    text-align: center;
+    animation: blinkingBackground 7s linear infinite;
+    text-shadow: 1px 1px 2px black; /* Contour noir autour du texte */
+}
+
+@keyframes blinkingBackground {
+    0%, 100% { background-color: #cc0000; } /* Rouge foncé */
+    50% { background-color: #ff6666; } /* Rouge clair */
+}
+
+.modal-dialog {
+    border-radius: 8px; /* Bords arrondis pour le modal */
+}
+
+.custom-close-btn {
+    background-color: #333; /* Couleur de fond foncée */
+    color: white; /* Texte en blanc */
+    border: none; /* Supprime la bordure */
+    padding: 10px 20px; /* Espace intérieur du bouton */
+    border-radius: 4px; /* Bords arrondis */
+    cursor: pointer; /* Curseur pointeur */
+  }
+  .custom-close-btn:hover {
+    background-color: #555; /* Fond plus clair au survol */
+  }
+
+.container-frame {
+    background-color: rgba(0, 0, 0, 0.1); /* Couleur de fond sombre */
+    padding: 10px; /* Padding pour créer de l'espace autour du contenu */
+    border-radius: 10px; /* Coins arrondis */
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2); /* Ombre */
+    margin: 20px 0; /* Espace autour du conteneur */
+    /* Supprimer la hauteur fixe */
+    max-height: none; /* Supprimer toute limite de hauteur */
+    overflow-y: visible; /* Empêcher le défilement vertical */
+}
+
+
+/* Ajout de la bande plus foncée en haut */
+.container-frame .title-bar {
+    background-color: rgba(0, 0, 0, 0.15); /* Couleur plus foncée pour la bande */
+    height: 40px; /* Hauteur de la bande */
+    width: 100%; /* Prend toute la largeur du conteneur */
+    position: absolute; /* Position absolue pour fixer la bande au haut */
+    top: 0; /* Alignement en haut du conteneur */
+    left: 0;
+    border-top-left-radius: 10px; /* Coins arrondis en haut à gauche */
+    border-top-right-radius: 10px; /* Coins arrondis en haut à droite */
+    display: flex; /* Pour aligner le texte au centre verticalement */
+    align-items: center;
+    justify-content: flex-start; /* Aligner le texte à gauche */
+    padding-left: 15px; /* Espace pour le titre à gauche */
+    color: #007436; /* Texte en vert comme avant */
+    font-size: 16px; /* Taille du texte */
+    font-weight: bold; /* Texte en gras */
+    border-bottom: 2px solid #007436; /* Trait épais vert en bas de la bande foncée */
+}
+
+/* Ajustement pour l'intérieur du conteneur */
+.container-frame .content {
+    padding-top: 10px; /* Créer de l'espace sous la bande foncée pour le contenu */
+    margin-bottom: 5px; /* Réduire la marge entre file_info_text et le reste */
+
+}
+
+.container-frame2 {
+    background-color: rgba(0, 0, 0, 0.1); /* Couleur de fond du conteneur */
+    max-height: 150px; /* Fixe une hauteur maximale */
+    height: 150px;
+    padding: 10px; /* Padding pour créer de l'espace autour du contenu */
+    border-radius: 10px; /* Coins arrondis */
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2); /* Ombre */
+    margin: 20px 0; /* Espace autour du conteneur */
+    position: relative; /* Nécessaire pour le positionnement absolu de la bande */
+    
+    /* Ajout pour centrer le contenu */
+    display: flex; /* Utilise Flexbox */
+    justify-content: center; /* Centre horizontalement */
+    align-items: center; /* Centre verticalement */
+    text-align: center; /* Centre le texte */
+}
+/* Ajout de la bande plus foncée en haut */
+.container-frame2 .title-bar {
+    background-color: rgba(0, 0, 0, 0.15); /* Couleur plus foncée pour la bande */
+    height: 40px; /* Hauteur de la bande */
+    width: 100%; /* Prend toute la largeur du conteneur */
+    position: absolute; /* Position absolue pour fixer la bande au haut */
+    top: 0; /* Alignement en haut du conteneur */
+    left: 0;
+    border-top-left-radius: 10px; /* Coins arrondis en haut à gauche */
+    border-top-right-radius: 10px; /* Coins arrondis en haut à droite */
+    display: flex; /* Pour aligner le texte au centre verticalement */
+    align-items: center;
+    justify-content: flex-start; /* Aligner le texte à gauche */
+    padding-left: 15px; /* Espace pour le titre à gauche */
+    color: #007436; /* Texte en vert comme avant */
+    font-size: 16px; /* Taille du texte */
+    font-weight: bold; /* Texte en gras */
+    border-bottom: 2px solid #007436; /* Trait épais vert en bas de la bande foncée */
+}
+
+/* Ajustement pour l'intérieur du conteneur */
+.container-frame2 .content {
+    padding-top: 30px; /* Créer de l'espace sous la bande foncée pour le contenu */
+}
+
+
+.container-frame3 {
+    background-color: rgba(0, 0, 0, 0.1); /* Couleur de fond sombre */
+    max-height: none;  /* Suppression de la limite de hauteur fixe */
+    height: auto;  /* Hauteur automatique */
+    padding: 10px; /* Padding pour créer de l'espace autour du contenu */
+    border-radius: 10px; /* Coins arrondis */
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2); /* Ombre */
+    margin: 20px 0; /* Espace autour du conteneur */
+    position: relative; /* Positionnement relatif pour l'ajustement des éléments à l'intérieur */
+}
+
+/* Ajout de la bande plus foncée en haut */
+.container-frame3 .title-bar {
+    background-color: rgba(0, 0, 0, 0.15); /* Couleur plus foncée pour la bande */
+    height: 40px; /* Hauteur de la bande */
+    width: 100%; /* Prend toute la largeur du conteneur */
+    position: absolute; /* Position absolue pour fixer la bande au haut */
+    top: 0; /* Alignement en haut du conteneur */
+    left: 0;
+    border-top-left-radius: 10px; /* Coins arrondis en haut à gauche */
+    border-top-right-radius: 10px; /* Coins arrondis en haut à droite */
+    display: flex; /* Pour aligner le texte au centre verticalement */
+    align-items: center;
+    justify-content: flex-start; /* Aligner le texte à gauche */
+    padding-left: 15px; /* Espace pour le titre à gauche */
+    color: #007436; /* Texte en vert comme avant */
+    font-size: 16px; /* Taille du texte */
+    font-weight: bold; /* Texte en gras */
+    border-bottom: 2px solid #007436; /* Trait épais vert en bas de la bande foncée */
+}
+
+/* Ajustement pour l'intérieur du conteneur */
+.container-frame3 .content {
+    padding-top: 30px; /* Créer de l'espace sous la bande foncée pour le contenu */
+
+}
+
+
+
+  .upload-button {
+    padding: 5px 10px; /* Réduit la taille du bouton Upload File */
+  }
+  
+  .load-button {
+    padding: 5px 10px; /* Réduit la taille du bouton Load Data */
+  }
+  
+  .file-name-container {
+    padding: 5px 10px; /* Réduit l'espace interne autour du nom de fichier */
+  }
+  
+  .load-button-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100%;
+  margin: 5px; /* Marge de 5px autour du conteneur du bouton */
+}
+
+.load-button-wrapper {
+  border: 2px solid #007436; /* Contour vert */
+  background-color: white; /* Fond blanc */
+  height: 75px;
+  border-radius: 4px; /* Coins arrondis */
+  padding: 10px; /* Espace interne pour le bouton */
+  box-shadow: 0 3px 6px rgba(0, 0, 0, 0.1); /* Ombre légère */
+  display: flex; /* Utilise Flexbox */
+  align-items: center; /* Centre verticalement */
+  justify-content: center; /* Centre horizontalement */
+  width: 100%; /* Prend toute la largeur disponible */
+}
+
+.load-button {
+  margin: 0; /* Enlève les marges par défaut du bouton */
+}
+
+.blinking-success {
+    color: green;
+    animation: blinkingText 1.2s infinite;
+}
+
+.success-icon {
+    color: green;
+    font-size: 24px;
+    margin-right: 10px;
+}
+
+@keyframes blinkingText {
+    0% { opacity: 1; }
+    50% { opacity: 0.5; }
+    100% { opacity: 1; }
+}
+
+/* Disposer les descripteurs en ligne avec flexbox */
+.descriptors-grid {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    justify-content: flex-start; /* Aligne les éléments au début de chaque ligne (à gauche) */
+    gap: 10px; /* Espace entre les éléments */
+}
+
+.descriptor-container {
+    flex: 0 0 15%; /* Chaque descripteur prend environ 19% de la largeur de la ligne */
+    max-width: 15%; /* Assure que chaque élément ne prenne pas plus de 19% */
+    box-sizing: border-box; /* Inclut padding et bordure dans la largeur */
+}
+
+.descriptor-input {
+    width: 100%; /* Prend toute la largeur du container */
+    padding: 8px;
+    font-size: 14px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    box-shadow: 0 3px 6px rgba(0, 0, 0, 0.1); /* Ombre légère */
+}
+
+
+
+/* Styles supplémentaires pour le bouton */
+.save-button {
+    background-color: #007436; /* Vert */
+    color: white; /* Texte blanc */
+    border: none; /* Pas de bordure */
+    border-radius: 4px; /* Coins arrondis */
+    padding: 10px 20px; /* Padding */
+    font-size: 14px; /* Taille de police */
+    font-weight: bold; /* Poids de police */
+    cursor: pointer; /* Curseur pointeur */
+    box-shadow: 0 3px 6px rgba(0, 0, 0, 0.1); /* Ombre légère */
+}
+
+.save-button:hover {
+    background-color: #005F30; /* Vert plus sombre au survol */
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2); /* Ombre plus profonde au survol */
+}
+
+.save-button-container {
+    display: flex;
+    justify-content: center;  /* Centre horizontalement */
+    align-items: center;      /* Centre verticalement */
+    margin-top: 10px;         /* Espace au-dessus du bouton */
+    margin-bottom: 20px;
+    width: 100%;              /* Prend toute la largeur */
+}
+
+.shiny-notification {
+        background-color: #007436 !important; /* Couleur de fond vert foncé */
+        color: white !important; /* Texte en blanc */
+        border-left: 5px solid #005F30 !important; /* Bordure plus foncée à gauche */
+}
+
+.file-info-text {
+        margin: 20px 20px 5px 20px; /* Réduire la marge inférieure à 5px */
+        padding: 15px;
+        background-color: rgba(0, 116, 54, 0.1);
+        border-left: 5px solid #004422;
+        font-family: 'Arial', sans-serif; /* Même police que le texte en haut */
+        font-size: 14px; /* Ajuste la taille de la police ici, pour être la même */
+        color: #333;
+        white-space: normal;
+        line-height: 1.6;
+        color: #004422;
+        border-radius: 5px;
+        box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+    }
+    .file-info-text strong {
+        font-weight: bold;
+        color: #007436;
+    }
+    .file-info-text span.red {
+        color: red;
+    }
+    .file-info-text a {
+        color: #007436;
+        font-weight: bold;
+        text-decoration: none;
+    }
+    .file-info-text a:hover {
+        text-decoration: underline;
+    }      
+    
+
+  .color-button {
+    position: relative;
+    width: 75px;
+    height: 33px;
+    border: none;
+    cursor: pointer;
+    border-radius: 8px;  /* Coins arrondis */
+    transition: transform 0.2s, box-shadow 0.2s;  /* Animation pour les interactions */
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);  /* Ombre douce */
+    background-color: transparent;
+    color: white;
+  }
+
+  /* Effet au survol des boutons de couleur */
+  .color-button:hover {
+    transform: translateY(-2px);  /* Légère élévation au survol */
+    box-shadow: 0 8px 12px rgba(0, 0, 0, 0.2);  /* Ombre plus marquée au survol */
+  }
+
+  /* Texte affiché uniquement au survol */
+  .color-button::after {
+    content: attr(data-color);  /* Utilise l'attribut data-color pour afficher le code couleur */
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    opacity: 0;
+    font-size: 12px;
+    font-weight: bold;
+    transition: opacity 0.3s ease-in-out;
+  }
+
+  /* Afficher le texte au survol */
+  .color-button:hover::after {
+    opacity: 1;
+  }
+
+  /* Ajuster la couleur du texte pour plus de lisibilité sur les couleurs claires */
+  .color-button[data-color='#FFFFFF'],
+  .color-button[data-color='#FFFF99'],
+  .color-button[data-color='#FFDAB9'],
+  .color-button[data-color='#FFB6C1'],
+  .color-button[data-color='#FFFACD'] {
+    color: #333;  /* Texte plus foncé sur fond clair */
+  }
+
+      /* Cacher les onglets du tabsetPanel si nécessaire */
+      .nav-tabs {
+        display: none !important;
+      }
+    
+.nav-section.active {
+    font-weight: bold;
+    font-size: 18px; /* Slightly larger text */
+    cursor: pointer;
+    border-radius: 4px; /* Optional: rounded corners */
+    transition: all 0.2s ease-in-out; /* Smooth transition */
+}
+
+    /* Si vous avez déjà une définition pour .nav-section.active, ajoutez simplement font-weight: bold; à l'intérieur */
+
+    /* Cacher les onglets du tabsetPanel si nécessaire */
+    .nav-tabs {
+      display: none !important;
+    }
+    
+    .container-frame2-left {
+    background-color: rgba(0, 0, 0, 0.1); /* Couleur de fond du conteneur */
+    max-height: 150px; /* Fixe une hauteur maximale */
+    height: 150px;
+    padding: 10px; /* Padding pour créer de l'espace autour du contenu */
+    border-radius: 10px; /* Coins arrondis */
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2); /* Ombre */
+    margin: 20px 0; /* Espace autour du conteneur */
+    position: relative; /* Nécessaire pour le positionnement absolu de la bande */
+    /* Les propriétés de centrage sont omises */
+    }
+    
+ /* Styles pour la grille de chargement d'images */
+      .image-upload-grid {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 20px;
+        justify-content: flex-start;
+      }
+
+      /* Ajuster la taille des cellules de téléchargement d'images */
+      .image-upload-cell {
+        width: 150px; /* Largeur fixe */
+        height: 200px; /* Hauteur fixe pour uniformité */
+        display: flex;
+        flex-direction: column;
+        align-items: center; /* Centrer horizontalement */
+        justify-content: flex-start; /* Aligner le contenu en haut */
+        padding: 10px 10px 5px 10px; /* Padding: haut, droite, bas, gauche */
+        background-color: rgba(255, 255, 255, 0.8);
+        border: 1px solid #ddd;
+        border-radius: 8px;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        margin-bottom: 20px;
+        text-align:center;
+        box-sizing: border-box; /* Inclure le padding et la bordure dans la taille */
+        overflow: hidden; /* Empêcher les débordements */
+      }
+
+  .image-upload-cell:hover {
+    box-shadow: 0 8px 12px rgba(0, 0, 0, 0.2);
+    transform: translateY(-2px);
+  }
+
+  /* Nom du produit */
+  .product-name {
+    font-weight: bold;
+    margin-bottom: 5px; /* Espace réduit sous le nom du produit */
+    color: #007436;
+  }
+
+  /* Image du produit et espace réservé */
+      .product-image, .image-placeholder {
+        width: 100px; /* Largeur fixe */
+        height: 100px; /* Hauteur fixe */
+        object-fit: contain; /* Afficher l'intégralité de l'image sans déformation */
+        border-radius: 4px; /* Coins arrondis */
+        margin-bottom: 5px; /* Espace réduit sous l'image */
+      }
+ 
+ 
+ /* Style spécifique pour l'espace réservé */
+      .image-placeholder {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background-color: #f4f4f4;
+        border: 1px dashed #ccc;
+      }
+
+
+   /* Icône dans l'espace réservé */
+      .image-placeholder .fas {
+        font-size: 24px;
+        margin-bottom: 5px;
+      }
+      
+/* Style pour les boutons de téléchargement */
+.file-input-container {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-top: auto; /* Pousse le bouton vers le bas */
+  margin-bottom: 5px; /* Espace de 5px au bas */
+}
+
+  /* Ajuster les boutons d'upload pour qu'ils s'alignent avec les images */
+.file-input-container .btn {
+  background-color: #007436;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  padding: 8px 16px;
+  margin-top: 5px; /* Ajouter un espace entre le bouton et l'image */
+  margin-bottom:5px;
+  text-align:center;
+}
+
+.file-input-container .btn:hover {
+  background-color: #005F30;
+}
+
+  .file-input-container .form-control {
+    display: none; /* Masque le champ texte affichant le nom du fichier */
+  }
+
+  .file-input-container .fileinput-button {
+    width: 100%;
+  }
+  
+  /* Grille pour la sélection de produits */
+.product-selection-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  justify-content: flex-start;
+}
+
+.product-card-button {
+  background: linear-gradient(135deg, #ffffff, #f0f0f0); /* Dégradé léger du blanc au gris clair */
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  margin: 10px;
+  border-radius: 8px; /* Coins légèrement arrondis */
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1); /* Ombre douce */
+  transition: background-color 0.3s ease, box-shadow 0.3s ease;
+}
+
+.product-card-button:hover {
+  background: linear-gradient(135deg, #e0f0e0, #cfe9cf); /* Dégradé léger vert au survol */
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.2); /* Ombre plus marquée */
+}
+
+.product-card {
+  width: 200px; /* Plus large */
+  height: 100px; /* Moins haute */
+  display: flex; /* Flexbox pour aligner l'image et le nom horizontalement */
+  flex-direction: row; /* Aligner horizontalement */
+  align-items: center; /* Centrer verticalement */
+  background-color: #fff;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  transition: transform 0.2s, box-shadow 0.2s;
+  margin-top: 10px;
+}
+
+
+.product-card:hover {
+  background-color: #eaf5ea; /* Vert très léger */
+  transform: translateY(-3px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+  transition: all 0.3s ease-in-out;
+}
+
+.product-card-image, .product-card-placeholder {
+  width: 80px; /* Largeur fixe pour l'image */
+  height: 80px; /* Hauteur fixe pour l'image */
+  object-fit: contain; /* Afficher l'intégralité de l'image sans déformation */
+  border-radius: 4px; /* Coins arrondis */
+  margin-left: 10px; /* Espace à gauche de l'image */
+}
+.product-card-placeholder {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: #f4f4f4; /* Fond gris clair pour l'espace réservé */
+  border: 1px dashed #ccc; /* Bordure en pointillés */
+  color: #777; /* Couleur du texte */
+  font-size: 14px; /* Taille de la police */
+}
+
+* Styles pour l'image du produit */
+.product-card-image {
+  width: 75px; /* Largeur fixe */
+  height: 75px; /* Hauteur fixe */
+  object-fit: contain; /* Affiche l'image entière sans déformation */
+  border-radius: 4px;
+  margin-top: 10px; /* Espacement en haut */
+}
+
+
+
+.product-card-name {
+  padding: 0 10px; /* Espacement autour du nom */
+  font-weight: bold;
+  font-size: 12px; /* Taille de police légèrement plus grande pour un aspect plus professionnel */
+  display: flex;
+  align-items: center; /* Alignement vertical */
+  color: #333; /* Couleur plus sobre pour le texte */
+  word-wrap: break-word; /* Autorise le retour à la ligne si le texte est trop long */
+  white-space: normal; /* Permet au texte de se diviser sur plusieurs lignes */
+  overflow-wrap: break-word; /* Gère les mots longs */
+}
+
+
+
+.selected-product-image {
+  width: 200px;
+  height: auto;
+  margin: 10px auto;
+}
+
+
+.no-selected-image {
+  text-align: center;
+  color: #777;
+  margin: 20px;
+  font-size: 16px;
+}
+
+.no-image {
+  width: 100%;
+  height: 150px;
+  background-color: #f4f4f4;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #777;
+  font-size: 16px;
+}
+
+/* Styles spécifiques pour la container-frame2 dans l'onglet DATA VISUALIZATION */
+        .dataviz-container {
+            display: flex;                /* Utilise Flexbox */
+            flex-direction: column;       /* Aligne les éléments verticalement */
+            align-items: flex-start;      /* Aligne les éléments au début (à gauche) */
+            text-align: left;             /* Aligne le texte à gauche */
+            padding-top: 6px;             /* Réduit davantage l'espace en haut */
+            height: auto;                 /* Hauteur automatique */
+            max-height: none;             /* Supprime toute limite de hauteur */
+        }
+
+        /* Styles pour le titre-bar spécifique */
+        .dataviz-container .title-bar {
+            margin-bottom: 2px;           /* Réduit l'espace en dessous du titre */
+            font-size: 16px;              /* Ajuste la taille du texte du titre si nécessaire */
+            font-weight: bold;            /* Rend le titre en gras pour plus de visibilité */
+            color: #007436;               /* Couleur verte foncée pour le titre */
+        }
+
+        /* Styles pour le texte d'information spécifique */
+        .dataviz-container .file-info-text {
+            margin-bottom: 5px;           /* Maintient un espace de 5px en dessous du texte */
+            font-size: 14px;              /* Taille de la police du texte */
+            color: #333;                  /* Couleur du texte */
+        }
+
+        /* Styles pour le numericInput */
+        .dataviz-container .content .form-control {
+            width: 220px;                  /* Ajuste la largeur pour une apparence plus compacte */
+            padding: 6px 10px;             /* Réduit le padding interne pour un look plus fin */
+            font-size: 14px;               /* Taille de la police ajustée */
+            border: 1.5px solid #007436;   /* Bordure verte foncée plus fine */
+            border-radius: 4px;            /* Coins légèrement arrondis */
+            box-shadow: inset 0 1px 2px rgba(0,0,0,0.1); /* Ombre intérieure subtile */
+            transition: border-color 0.3s, box-shadow 0.3s; /* Transition douce pour les interactions */
+        }
+
+        .dataviz-container .content .form-control:focus {
+            border-color: #005F30;         /* Bordure plus sombre au focus */
+            box-shadow: 0 0 3px rgba(0, 116, 54, 0.5); /* Ombre extérieure lors du focus */
+            outline: none;                  /* Supprime le contour par défaut */
+        }
+
+        /* Optionnel : Styliser le label du numericInput */
+        .dataviz-container .content label {
+            font-weight: bold;             /* Texte en gras pour le label */
+            color: #007436;                /* Couleur verte foncée pour le label */
+            margin-bottom: 3px;            /* Espace de 3px en dessous du label */
+            font-size: 14px;               /* Taille de la police du label */
+        }
+        
+            function getContrastYIQ(hexcolor){
+      hexcolor = hexcolor.replace('#', '');
+      var r = parseInt(hexcolor.substr(0,2),16);
+      var g = parseInt(hexcolor.substr(2,2),16);
+      var b = parseInt(hexcolor.substr(4,2),16);
+      var yiq = ((r*299)+(g*587)+(b*114))/1000;
+      return (yiq >= 128) ? 'black' : 'white';
+    }
+    
+    Shiny.addCustomMessageHandler('updateColorTable', function(message) {
+      // message is expected to be a data frame with COLOR column
+      var table = $('#results_table').DataTable();
+      table.rows().every(function(rowIdx, tableLoop, rowLoop){
+        var data = this.data();
+        var contrastColor = getContrastYIQ(data[2]); // Assuming COLOR is the third column
+        $('td:eq(2)', this.node()).css({
+          'background-color': data[2],
+          'color': contrastColor,
+          'font-weight': 'bold',
+          'text-align': 'center'
+        });
+      });
+    });
+    
+    /* Ajuster la largeur des conteneurs */
+.results_table_container, .circle_plot_container {
+  flex: 1;
+}
+
+/* Ajouter un peu d'espacement autour du plot */
+.circle_plot_container {
+  padding-left: 20px;
+}
+
+/* Adapter la taille du plot pour différents écrans */
+@media (max-width: 768px) {
+  .circle_plot_container {
+    padding-left: 0;
+  }
+  
+  .results_table_container, .circle_plot_container {
+    flex: 100%;
+  }
+}
+
+   .slider-container .irs-bar {
+      background-color: #007436;
+      border-top: 1px solid #004422;
+      border-bottom: 1px solid #004422;
+    }
+    .slider-container .irs-slider {
+      background-color: #4CAF50;
+      border: 1px solid #007436;
+    }
+    .slider-container .irs-from, .slider-container .irs-to {
+      background-color: #007436;
+      color: white;
+    }
+    
+    /* Style général pour le tableau */
+    table.dataTable {
+      border-collapse: collapse !important;
+      width: 100%;
+      background-color: white;
+      margin-bottom: 20px;
+    }
+
+    /* Style pour les en-têtes de colonnes */
+    table.dataTable thead th {
+      background-color: #004d00; /* Vert foncé */
+      color: white;
+      font-weight: bold;
+      text-align: center;
+      padding: 10px;
+      border-bottom: 2px solid #004422;
+    }
+
+    /* Style pour les cellules du corps du tableau */
+    table.dataTable tbody td {
+      text-align: center;
+      padding: 8px;
+      border-bottom: 1px solid #f2f2f2;
+    }
+
+    /* Couleur de fond alternée pour les lignes */
+    table.dataTable tbody tr:nth-child(odd) {
+      background-color: rgba(191, 191, 191, 0.2);;
+    }
+
+    table.dataTable tbody tr:nth-child(even) {
+ background-color: rgba(133, 133, 133, 0.3); /* Lignes paires légèrement colorées */    }
+
+    /* Effet au survol des lignes */
+    table.dataTable tbody tr:hover {
+  background-color: rgba(86 , 184,57, 0.2); /* Hover sur les lignes */
+    }
+
+    /* Bordure autour du tableau */
+    table.dataTable {
+      border: 1px solid #ddd;
+      border-radius: 4px;
+    }
+
+    /* Style pour les cellules de la colonne COLOR */
+    table.dataTable tbody td:nth-child(3) {
+      font-weight: bold;
+      text-align: center;
+      color: black; /* Par défaut, texte en noir */
+    }
+    
+    /* Fixer la hauteur du conteneur DataTable */
+    #results_table_wrapper .dataTables_scrollBody {
+      height: 400px;
+    }
+
+.download-button {
+  background-color: #007436; /* Vert de l'application */
+  color: white;
+  border: none;
+  border-radius: 4px;
+  padding: 8px 16px;
+  font-size: 14px;
+  font-weight: bold;
+  cursor: pointer;
+  margin-top: 10px;
+  box-shadow: 0 3px 6px rgba(0, 0, 0, 0.1);
+}
+.download-button:hover {
+  background-color: #005F30; /* Vert plus foncé au survol */
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+}
+
+.dataviz-container .column {
+  /* Fond blanc légèrement transparent */
+  background-color: rgba(0, 116, 54, 0.1);
+  
+  /* Bordure vert foncé de 1px */
+  border: 1px solid #007436;
+  
+  padding: 15px;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  display: flex;
+  flex-direction: column;
+}
+
+/* Styles pour les bande vert foncé avec le titre en blanc */
+.plot-options-header, .circle-plot-header{
+  background-color: #004d00; /* Vert foncé */
+  color: #ffffff; /* Texte en blanc */
+  padding: 5px 15px; /* Ajuster le padding pour obtenir une hauteur de 20px */
+  font-size: 16px; /* Taille de police */
+  font-weight: bold;
+  border-top-left-radius: 8px;
+  border-top-right-radius: 8px;
+  text-align: center;
+  height: 30px; /* Hauteur de la bande */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 10px; /* Espace de 10px sous la bande */
+}
+
+/* Styles pour les bande vert foncé avec le titre en blanc */
+.plot-result-table-header {
+  background-color: #ffffff; /* Fond blanc */
+  color: #004d00; /* Texte en vert */
+  padding: 5px 15px; /* Ajuster le padding pour obtenir une hauteur de 20px */
+  font-size: 16px; /* Taille de police */
+  font-weight: bold;
+  border-top-left-radius: 8px;
+  border-top-right-radius: 8px;
+  text-align: center;
+  height: 30px; /* Hauteur de la bande */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 10px; /* Espace de 10px sous la bande */
+  border: 1px solid black; /* Ajout d'une bordure noire */
+
+}
+
+/* Styles pour les titres des colonnes */
+.dataviz-container .column h4 {
+  margin-top: 0;
+  font-size: 18px;
+}
+
+/* Styles pour la bande verte foncée dans Results Table */
+.results-table-header {
+  background-color:#ffffff ; /* Fond Blanc */
+  color: ##007436; /* Texte en vert */
+  padding: 10px 15px; /* Ajuster le padding selon vos besoins */
+  font-size: 16px; /* Taille de police */
+  font-weight: bold;
+  border-top-left-radius: 8px;
+  border-top-right-radius: 8px;
+  text-align: center;
+
+}
+
+/* Styles pour les titres des options */
+.option-section h5 {
+  margin-top: 5px;
+  margin-bottom: 5px;
+  font-weight: bold;
+}
+
+/* Styles pour les sections d'options */
+.option-section {
+  margin-bottom: 15px;
+}
+
+/* Styles pour les paragraphes descriptifs */
+.option-section p {
+  margin-bottom: 10px;
+  font-size: 14px;
+  color: #555;
+}
+
+/* Styles pour les radio buttons */
+.option-section .radio-inline {
+  margin-right: 15px;
+}
+
+/* Styles pour le slider */
+.slider-container .irs-bar {
+  background-color: #007436;
+  border-top: 2px solid #004422;
+  border-bottom: 2px solid #004422;
+}
+.slider-container .irs-slider {
+  background-color: #4CAF50;
+  border: 2px solid #007436;
+}
+.slider-container .irs-from, .slider-container .irs-to {
+  background-color: #007436;
+  color: white;
+}
+
+/* Styles pour le tableau des résultats */
+.dataviz-container .column DT::dataTableOutput {
+  background-color: rgba(255, 255, 255, 0.8); /* Fond blanc légèrement transparent */
+  flex-grow: 1; /* Assurer que le tableau prend toute la hauteur disponible */
+
+}
+
+/* Styles pour le slider personnalisé */
+.custom-slider .irs-bar,
+.custom-slider .irs-line {
+  background-color: #007436 !important; /* Vert */
+}
+
+.custom-slider .irs-bar-edge {
+  background-color:  #007436 !important; /* Vert */
+}
+
+.custom-slider .irs-slider {
+  background-color: #007436 !important; /* Vert */
+  border: 2px solid #000000 !important; /* Contour noir plus épais */
+  box-shadow: none !important; /* Enlever l'ombre par défaut */
+}
+
+.custom-slider .irs-slider:hover {
+  background-color: #007436 !important; /* Vert légèrement plus clair au survol */
+  border: 2px solid #000000 !important; /* Maintenir le contour noir */
+}
+
+.custom-slider .irs-single,
+.custom-slider .irs-from,
+.custom-slider .irs-to {
+  background-color: #007436 !important; /* Vert */
+  color: white !important; /* Texte blanc */
+  border: 2px solid #000000 !important; /* Contour noir */
+}
+
+.custom-slider .irs-slider:focus {
+  outline: none; /* Supprimer le contour de focus par défaut */
+  box-shadow: none !important; /* Supprimer l'ombre de focus */
+}
+
+
+/* Créer un style personnalisé pour les labels */
+.dataviz-container .option-section .radio-inline label {
+  position: relative;
+  padding-left: 25px;
+  cursor: pointer;
+  display: inline-block;
+  color: #007436; /* Couleur du texte */
+}
+
+/* Créer le cercle non sélectionné */
+.dataviz-container .option-section .radio-inline label::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 15px;
+  height: 15px;
+  border: 2px solid #000000; /* Contour noir */
+  border-radius: 50%;
+  background-color: white;
+}
+
+/* Créer le point sélectionné */
+.dataviz-container .option-section .radio-inline input[type='radio']:checked + label::after {
+  content: '';
+  position: absolute;
+  left: 5px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 7px;
+  height: 7px;
+  background-color: #007436; /* Vert */
+  border-radius: 50%;
+}
+
+  /* Comments Section Styling */
+    .comments-section {
+      margin-top: 20px;
+      padding: 20px;
+      background-color: #f5f5f5; /* Light grey background */
+      border-radius: 8px;
+      border: 1px solid #e0e0e0;
+      max-width: 800px;
+      max-height: 400px;
+      margin-left: auto;
+      margin-right: auto;
+      overflow-y: auto;
+    }
+    
+    .comment-icon {
+  color: #007436; /* Use your application's primary color */
+}
+    .comments-section h4 {
+      margin-top: 0;
+      font-weight: bold;
+      color: #333333;
+      font-size: 22px;
+      text-align: center;
+      margin-bottom: 20px;
+    }
+    .comments-section ul {
+      list-style-type: none;
+      padding-left: 0;
+    }
+    .comments-section li {
+      margin-bottom: 15px;
+      padding: 15px;
+      background-color: #ffffff;
+      border-radius: 5px;
+      border: 1px solid #dddddd;
+      font-size: 16px;
+      color: #555555;
+      display: flex;
+      align-items: center;
+    }
+    .comments-section li:last-child {
+      margin-bottom: 0;
+    }
+    .comments-section li .comment-icon {
+      font-size: 24px;
+      color: #007436; /* Your application's primary color */
+      margin-right: 15px;
+    }
+    .comments-section li .comment-text {
+      flex: 1;
+    }
+    /* Optional: Add hover effect */
+    .comments-section li:hover {
+      background-color: #f0f0f0;
+    }
+    
+      /* Style for the slider track */
+  .irs-bar {
+    background-color: #007436 !important; /* Vert de l'application */
+    border-top: 1px solid #004422 !important; /* Bordure plus foncée */
+    border-bottom: 1px solid #004422 !important;
+  }
+
+  /* Style for the slider handle (thumb) */
+  .irs-slider {
+    background-color: #007436 !important; /* Vert de l'application */
+    border: 2px solid #004422 !important; /* Bordure plus foncée */
+    border-radius: 50%; /* Rond */
+    box-shadow: none !important; /* Pas d'ombre */
+  }
+
+  /* Style for the selected range */
+  .irs-bar-edge {
+    background-color: #007436 !important; /* Vert de l'application */
+    border: 1px solid #004422 !important; /* Bordure */
+  }
+
+  /* Style for the min and max labels */
+  .irs-min, .irs-max {
+    color: #007436 !important; /* Texte vert */
+    font-weight: bold !important; /* Texte en gras */
+  }
+
+  /* Style for the current value label */
+  .irs-single {
+    background-color: #007436 !important; /* Fond vert */
+    color: white !important; /* Texte blanc */
+    border: 1px solid #004422 !important; /* Bordure plus foncée */
+    font-weight: bold; /* Texte en gras */
+  }
+  
+/* Conserver l’apparence native mais changer la couleur du fond quand c’est coché */
+.checkbox input[type='checkbox'], .checkbox-inline input[type='checkbox'] {
+  accent-color: #007436 !important; /* vert foncé */
+}
+
+.checkbox-inline input[type='checkbox'] {
+  margin-top: 4px;          /* décale la checkbox de 4px vers le bas */
+  vertical-align: middle;   /* essaie aussi : top, baseline, etc. */
+  margin-right: 8px;        /* un peu d'espace avant le label */
+}
