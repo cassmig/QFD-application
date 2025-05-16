@@ -1325,3 +1325,11 @@
   vertical-align: middle;   /* essaie aussi : top, baseline, etc. */
   margin-right: 8px;        /* un peu d'espace avant le label */
 }
+
+
+@keyframes blink-color {
+  0%, 100% { background-color: #006400; } /* Vert foncé */
+  50% { background-color: #66C266; }     /* Vert clair, mais pas fluo */
+}
+
+

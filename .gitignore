@@ -1,0 +1,8 @@
+# R / RStudio
+.Rhistory
+.RData
+.Rproj.user/
+.Ruserdata
+
+# Logs / temporaires
+*.log
