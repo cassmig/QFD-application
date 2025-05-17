@@ -1,5 +1,6 @@
 # QFD-App
 
+
 > **QFD-App** is an interactive Shiny dashboard that automates the post-processing of QFM sensory tests exported from **Qualtrics™** or **Fizz™**.  
 > The app ranks descriptors, normalises results to a standard panel size, assigns colours, allows renaming, generates **circle plots**, summarises comments, and exports results in several formats.  
 > Upcoming releases will add advanced statistics and automatic report generation.
