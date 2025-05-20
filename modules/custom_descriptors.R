@@ -52,46 +52,7 @@ custom_descriptors <- function(input, output, session) {
       # 📌 Step 3: Define Informational Text Based on File Type
       # --------------------------------------------------------------------------------------------------------
       
-      # Define an informational message based on the detected file type
-      if (file_type() == "qualtrics") {
-        
-        file_text <- div(
-          class = "file-info-text",
-          style = "margin-bottom: 10px;",
-          
-          "You have loaded a ", tags$strong(tags$span(style = "color: #007436;", "Qualtrics")), " file in which ",
-          tags$strong(num_panelists_val), " ", tags$strong("panelists"), " have evaluated ",
-          tags$strong(num_of_products_val), " ", tags$strong("products"), " using ",
-          tags$strong(num_descriptors_val), " ", tags$strong("descriptors"), ".",
-          "You can change the descriptor names below. ",
-          
-          tags$br(),
-          tags$strong(tags$span(class = "red", "Don't forget to save your changes."))
-        )
-        
-      } else if (file_type() == "fizz") {
-        
-        file_text <- div(
-          class = "file-info-text",
-          style = "margin-bottom: 10px;",
-          
-          "You have loaded a ", tags$strong(tags$span(style = "color: #007436;", "Fizz")), " file in which ",
-          tags$strong(num_panelists_val), " ", tags$strong("panelists"), " have evaluated ",
-          tags$strong(num_of_products_val), " ", tags$strong("products"), " using ",
-          tags$strong(num_descriptors_val), " ", tags$strong("descriptors"), ".",
-          "Below you can associate each descriptor with a name using the ",
-          tags$strong(tags$span(style = "color: #007436;", "Fizz application.")),
-          
-          tags$br(),
-          tags$strong(tags$span(class = "red", "Don't forget to save your changes."))
-        )
-        
-      } else {
-        file_text <- NULL  # No text if no valid file type is detected
-      }
-      
-      #  Assign the formatted text to the UI output
-      output$file_info_text <- renderUI({ file_text })
+
       
           
       # --------------------------------------------------------------------------------------------------------
@@ -264,15 +225,6 @@ custom_descriptors <- function(input, output, session) {
       ### 📌 Step 6: Define UI Instructions Based on File Type
       # --------------------------------------------------------------------------------------------------------#
 
-      # Render the UI component that displays file information
-      output$file_info_text <- renderUI({
-        # Check the file type and assign the corresponding informational text
-        if (file_type() == "qualtrics") {
-          file_text  # Use predefined text for Qualtrics file type
-        } else if (file_type() == "fizz") {
-          file_text  # Use predefined text for Fizz file type
-        }
-      })
 
       # Render the instruction text for users
       output$instructionText <- renderUI({
@@ -381,4 +333,36 @@ custom_descriptors <- function(input, output, session) {
       
     }  # End if(file_loaded())
   })  # End observeEvent(file_loaded())
+  
+  # ← ici, en-dehors de l’observeEvent(file_loaded(), …)
+  output$file_info_text <- renderUI({
+    req(file_loaded(), file_type(), num_panelists(), num_of_products(), num_descriptors())
+    np  <- num_panelists()
+    npd <- num_of_products()
+    nd  <- num_descriptors()
+    
+    # Choisir le label du type de fichier
+    file_label <- if (file_type() == "qualtrics") "Qualtrics" else "Fizz"
+    
+    div(
+      class = "file-info-text",
+      style = "margin-bottom:10px;",
+      
+      # 1) Phrase principale (no style particulier, tu peux ajuster si besoin)
+      HTML(sprintf(
+        "You have loaded a <strong>%s</strong> file in which <strong>%d</strong> panelists have evaluated <strong>%d</strong> products using <strong>%d</strong> descriptors. You can change the descriptor names below.",
+        file_label, np, npd, nd
+      )),
+      
+      # 2) Saut de ligne
+      tags$br(),
+      
+      # 3) Rappel en gras et rouge
+      tags$strong(
+        style = "color:#CC0000;",
+        "Don't forget to save your changes."
+      )
+    )
+  })
+  
 }

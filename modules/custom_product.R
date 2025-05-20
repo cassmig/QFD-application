@@ -18,37 +18,39 @@ custom_product <- function(input, output, session) {
       ### 📌 Step 2: Generate Dynamic Text Input Fields for Product Renaming
       # --------------------------------------------------------------------------------------------------------#
       
+      
       output$productRenameUI <- renderUI({
-        product_data <- product_df_data()  # Retrieve the product dataset
-        
-        # If the file type is "Fizz", sort products based on their numerical suffix
+        pd <- product_df_data()
+        # If Fizz, sort by numeric suffix
         if (file_type() == "fizz") {
-          numeric_suffix <- as.numeric(gsub("[^0-9]", "", product_data$product_code))
-          sorted_indices <- order(numeric_suffix)
-          product_data <- product_data[sorted_indices, ]
+          nums <- as.numeric(gsub("[^0-9]", "", pd$product_code))
+          pd <- pd[order(nums), ]
         }
         
-        # print("✅ STEP 2: Generating UI for product renaming")
-        
+        # Fixed cell width and centered save button
         tagList(
           div(class = "descriptors-grid",
-              lapply(1:nrow(product_data), function(i) {
+              style = "display: flex; flex-wrap: wrap; gap: 10px; ",
+              lapply(seq_len(nrow(pd)), function(i) {
+                code <- pd$product_code[i]
                 div(
                   class = "descriptor-container",
-                  style = paste0("width: ", max(150, nchar(product_data$product_code[i]) * 10), "px;"),
+                  style = "width: 200px; ",
                   textInput(
-                    inputId = paste0("product_name_", product_data$product_code[i]),
-                    label = product_data$product_code[i],  # Display the product code
-                    value = product_data$product_name[i]   # Use existing name or empty for Fizz
+                    inputId = paste0("product_name_", code),
+                    label   = code,
+                    value   = pd$product_name[i],
+                    width   = "100%"
                   )
                 )
               })
           ),
-          div(class = "save-button-container",
-              actionButton("save_products", "Save Changes", class = "save-button"))
+          div(
+            style = "text-align: center; margin-top: 15px;",
+            actionButton("save_products", "Save Changes", class = "save-button", style = "min-width: 150px;")
+          )
         )
-      })
-      
+      })   
       # print("✅ STEP 2.1: UI for product renaming generated successfully")
       
   
@@ -59,49 +61,45 @@ custom_product <- function(input, output, session) {
       observeEvent(input$save_products, {
         product_data <- product_df_data()
         
-        # 1️⃣ Retrieve new product names (keep original if empty)
-        new_product_names <- sapply(product_data$product_code, function(code) {
-          new_name <- input[[paste0("product_name_", code)]]
-          if (is.null(new_name) || new_name == "") return(code)  # fallback to code
-          return(new_name)
-        })
+        pd <- product_df_data()
+        # 1) Récupère les saisies
+        new_names <- vapply(pd$product_code, function(code) {
+          nm <- input[[paste0("product_name_", code)]]
+          if (is.null(nm) || nm == "") code else nm
+        }, character(1))
         
-        # 2️⃣ Update the reactive product data with safe names
-        product_df_data_updated <- product_data
-        product_df_data_updated$product_name <- new_product_names
-        product_df_data(product_df_data_updated)
+        # 2) Met à jour product_df_data()
+        pd$product_name <- new_names
+        product_df_data(pd)
+        showNotification("Product names updated successfully!", type = "message")
         
-        # 🟩 Debug: Show the updated names
-        cat("✅ STEP 3.1: Updated product names:\n")
-        print(new_product_names)
-        
-        showNotification("Product names updated successfully!", type = "message", duration = 4)
-        
-        # 3️⃣ Update the column new_name_product in result()
+        # 3) Met à jour result()$new_name_product
         req(result())
-        old_res <- result()
-        
-        # Create column if it doesn't exist yet
-        if (!"new_name_product" %in% names(old_res)) {
-          old_res$new_name_product <- old_res$product
-          # cat("✅ INFO: new_name_product initialized with default product codes.\n")
+        res <- result()
+        # Initialisation si nécessaire
+        if (!"new_name_product" %in% names(res)) {
+          res$new_name_product <- res$product
         }
         
-        # Match and update names
-        df_prod <- product_df_data()
-        idx <- match(old_res$product, df_prod$product_code)
-        old_res$new_name_product <- df_prod$product_name[idx]
+        # Choix de la clé de correspondance
+        if (file_type() == "qualtrics" && "old_product" %in% names(res)) {
+          keys <- res$old_product
+        } else {
+          keys <- res$product
+        }
+        # Match et assignation
+        idx <- match(keys, pd$product_code)
+        res$new_name_product <- pd$product_name[idx]
         
-        # 4️⃣ Save the updated table
-        result(old_res)
+        # 4) Sauvegarde
+        result(res)
         
-        # 🐛 Debug
-        cat("\n-------------------------------------------------\n")
-        cat("DEBUG: product_df_data() after name update:\n")
-        print(head(product_df_data()))
-        cat("DEBUG: result() after new_name_product update:\n")
-        print(head(result()))
-        cat("-------------------------------------------------\n\n")
+        # Debug
+        cat("\n--- DEBUG: product_df_data() ---\n")
+        print(head(pd))
+        cat("--- DEBUG: result() ---\n")
+        print(head(res))
+        cat("-------------------------------\n\n")
       })
       
       
@@ -226,5 +224,28 @@ custom_product <- function(input, output, session) {
       
     }  # End of if(file_loaded())
   })  # End of observeEvent(file_loaded())
+  
+  # ────────────────────────────────────────────────────────────────────────────
+  # Observer pour afficher en console les noms à afficher pour chaque produit
+  # ────────────────────────────────────────────────────────────────────────────
+  # observe({
+  #   req(file_loaded(), product_df_data(), file_type())
+  #   dfp <- product_df_data()
+  #   
+  #   display_names <- vapply(seq_len(nrow(dfp)), function(i) {
+  #     code <- dfp$product_code[i]
+  #     user <- dfp$product_name[i]
+  #     if (file_type() == "fizz") {
+  #       # Fizz : default produit_X ou override
+  #       if (!is.na(user) && nzchar(user)) user else code
+  #     } else {
+  #       # Qualtrics : default produit_<code> ou override
+  #       if (!is.na(user) && nzchar(user)) user else paste0("produit_", code)
+  #     }
+  #   }, FUN.VALUE = "")
+  #   
+  #   # print dans la console
+  #   cat("→ Noms affichés des produits :", paste(display_names, collapse = " | "), "\n")
+  # })
   
 }

@@ -3,175 +3,139 @@
 
 product_selection <- function(input, output, session) {
   
-  # --------------------------------------------------------------------------------------------------------# 
+  # --------------------------------------------------------------------------------------------------------#
   ### 📌 Step 1: Retrieve and Order Product Data Dynamically
   # --------------------------------------------------------------------------------------------------------#
-  
   ordered_product_data <- reactive({
-    req(product_df_data())  # Ensure product data is available
+    req(product_df_data())
+    df <- product_df_data()
     
-    product_data <- product_df_data()  # Retrieve product data
+    # Build display_name for UI cards (Fizz & Qualtrics share same "display_name")
+    df <- df %>% mutate(
+      display_name = dplyr::case_when(
+        nzchar(product_name) ~ product_name,
+        file_type() == "qualtrics"   ~ paste0("produit_", product_code),
+        TRUE                          ~ product_code
+      )
+    )
+    # Debug
+    print(head(df %>% select(product_code, product_name, display_name)))
     
-    # Use product names if available; otherwise, use product codes
-    product_data <- product_data %>%
-      mutate(display_name = ifelse(product_name != "", product_name, product_code))
-    
-    # Sort Fizz product codes numerically if applicable
-    if (!is.null(file_type()) && file_type() == "fizz") {
-      numeric_suffix <- as.numeric(gsub("[^0-9]", "", product_data$product_code))
-      
-      if (all(!is.na(numeric_suffix))) {
-        sorted_indices <- order(numeric_suffix)
-        product_data <- product_data[sorted_indices, ]
-      } else {
-        showNotification("Warning: Some product names do not follow the expected format 'produit_X'. Order may be incorrect.", type = "warning")
-      }
+    # If Fizz, sort numerically on the code suffix
+    if (file_type() == "fizz") {
+      nums <- as.numeric(gsub("\\D", "", df$product_code))
+      if (all(!is.na(nums))) df <- df[order(nums), ]
     }
-    
-    return(product_data)  # Return sorted and formatted product data
+    df
   })
   
-  # print("✅ STEP 1: Product data retrieved and sorted")
-  
-  # --------------------------------------------------------------------------------------------------------# 
+  # --------------------------------------------------------------------------------------------------------#
   ### 📌 Step 2: Render the UI for Product Selection
   # --------------------------------------------------------------------------------------------------------#
-  
   output$productSelectionUI <- renderUI({
-    req(file_loaded(), ordered_product_data())  # Ensure data is loaded
-    
-    product_data <- ordered_product_data()  # Retrieve sorted product data
-    
-    # print("✅ STEP 2: Generating Product Selection UI")
-    
-    # Create product selection grid dynamically
+    req(file_loaded(), ordered_product_data())
+    pd <- ordered_product_data()
     div(
       class = "product-selection-grid",
-      lapply(1:nrow(product_data), function(i) {
-        product_code <- product_data$product_code[i]  # Extract product code
-        product_name <- product_data$display_name[i]  # Extract display name
-        image_info <- product_images[[product_code]]  # Retrieve stored product image
-        
-        # Check if an image exists for the product
-        if (!is.null(image_info)) {
-          base64 <- base64enc::dataURI(file = image_info$datapath, mime = image_info$type)
-          image_tag <- tags$img(src = base64, class = "product-card-image")  # Display uploaded image
+      lapply(seq_len(nrow(pd)), function(i) {
+        code <- pd$product_code[i]
+        name <- pd$display_name[i]
+        img  <- product_images[[code]]
+        image_tag <- if (!is.null(img)) {
+          tags$img(src = base64enc::dataURI(img$datapath, img$type),
+                   class = "product-card-image")
         } else {
-          image_tag <- div(class = "no-image", "No image")  # Placeholder for missing images
+          div(class = "no-image", "No image")
         }
-        
-        # Create a clickable product card
         actionButton(
           inputId = paste0("select_product_", i),
-          label = div(
-            class = "product-card",
-            image_tag,  # Product Image
-            div(class = "product-card-name", product_name)  # Product Name
-          ),
-          class = "product-card-button"
+          label   = div(class = "product-card", image_tag,
+                        div(class = "product-card-name", name)),
+          class   = "product-card-button"
         )
       })
     )
   })
   
-  # print("✅ STEP 2.1: Product Selection UI generated successfully")
-  
-  # --------------------------------------------------------------------------------------------------------# 
+  # --------------------------------------------------------------------------------------------------------#
   ### 📌 Step 3: Observe Clicks on Product Cards and Update Selected Product
   # --------------------------------------------------------------------------------------------------------#
-  
   observe({
-    product_data <- ordered_product_data()
-    
-    lapply(1:nrow(product_data), function(i) {
+    req(file_loaded(), ordered_product_data())
+    pd <- ordered_product_data()
+    lapply(seq_len(nrow(pd)), function(i) {
       observeEvent(input[[paste0("select_product_", i)]], {
-        product_code <- product_data$product_code[i]
-        
-        # Si le fichier est de type "qualtrics", on fait la correspondance
-        if (!is.null(file_type()) && file_type() == "qualtrics") {
-          corresponding_product <- result() %>%
-            filter(old_product == product_code) %>%
-            distinct(product) %>%
-            pull(product)
-          
-          if (length(corresponding_product) == 1) {
-            selected_product(corresponding_product)
-          } else {
+        sel_code <- pd$product_code[i]
+        if (file_type() == "qualtrics") {
+          cp <- result() %>% filter(old_product == sel_code) %>%
+            distinct(product) %>% pull(product)
+          if (length(cp) == 1) selected_product(cp)
+          else {
             selected_product(NULL)
-            warning(paste("❌ Produit non trouvé pour code Qualtrics :", product_code))
           }
         } else {
-          # Pour Fizz : on utilise directement le code
-          selected_product(product_code)
+          selected_product(sel_code)
         }
       })
     })
   })
   
-  # print("✅ STEP 3.1: Product selection observer initialized")
-  
-  # --------------------------------------------------------------------------------------------------------# 
+  # --------------------------------------------------------------------------------------------------------#
   ### 📌 Step 4: Render Dynamic Text Based on Selected Product
   # --------------------------------------------------------------------------------------------------------#
-  
   output$product_info_text <- renderUI({
-    req(selected_product())  # Ensure a product has been selected
+    req(selected_product(), product_df_data(), result())
+    sel_internal <- selected_product()
+    dfp          <- product_df_data()
+    res          <- result()
     
-    # Retrieve product data and find selected product name
-    product_data <- product_df_data()
-    selected_product_code <- selected_product()
-    product_name <- product_data$product_name[product_data$product_code == selected_product_code]
+    # For Qualtrics: map back to original code, then override if user changed, else produit_<code>
+    if (file_type() == "qualtrics") {
+      old_idx <- match(sel_internal, res$product)
+      old_code <- if (!is.na(old_idx)) res$old_product[old_idx] else NA_character_
+      # see if user provided override
+      pidx <- match(old_code, dfp$product_code)
+      user  <- if (!is.na(pidx)) dfp$product_name[pidx] else ""
+      if (nzchar(user)) {
+        disp_name <- user
+      } else if (!is.na(old_code)) {
+        disp_name <- paste0("produit_", old_code)
+      } else {
+        disp_name <- sel_internal
+      }
+    } else {
+      # Fizz: simpler, use product_df_data() mapping
+      pd  <- ordered_product_data()
+      idx <- match(sel_internal, pd$product_code)
+      if (!is.na(idx)) disp_name <- pd$display_name[idx] else disp_name <- sel_internal
+    }
     
-    # Use product name if available; otherwise, use product code
-    product_display_name <- ifelse(product_name == "", selected_product_code, product_name)
+    # Debug
+    cat(">> DEBUG: final disp_name =", disp_name, "\n")
     
-    # Generate the dynamic information text
-    div(
-      class = "intro-text",
-      HTML(
-        paste0(
-          "The selected product is <strong>", product_display_name, "</strong>.<br>",
+    div(class = "intro-text",
+        HTML(paste0(
+          "The selected product is <strong>", disp_name, "</strong>.<br>",
           "Below you will find the score obtained for each descriptor.<br>",
           "The score is obtained as follows: when the descriptor is cited first, it gets a score of +3; ",
           "when it's selected second, it gets +2; and when it's selected third, it gets +1.<br>"
-        )
-      )
+        ))
     )
   })
   
-  # print("✅ STEP 4: Dynamic product information text rendered")
-  
-  # --------------------------------------------------------------------------------------------------------# 
+  # --------------------------------------------------------------------------------------------------------#
   ### 📌 Step 5: Render UI for Customizing the Number of Panelists
   # --------------------------------------------------------------------------------------------------------#
-  
   output$file_info_text4 <- renderUI({
-    if (file_loaded()) {
-      tagList(
-        div(
-          class = "file-info-text",
-          style = "text-align: center; margin-top: 22px; width: 100%;",
+    req(file_loaded())
+    tagList(
+      div(class = "file-info-text", style = "text-align:center; margin-top:22px; width:100%;",
           HTML("<em>Customize the <strong>number of panelists</strong> below to tailor your analysis. The default is set to <strong>12 panelists</strong>.</em>"),
-          
-          # Display a numeric input field for panelist selection
-          div(
-            style = "display: flex; align-items: center; justify-content: center; margin-top: 15px;",
-            tags$i(class = "fas fa-users", style = "font-size: 24px; margin-right: 10px; color: #007436;"),
-            div(
-              class = "numeric-input",
-              numericInput(
-                inputId = "num_panelists_selection",
-                label = NULL,
-                value = 12,  # Default number of panelists
-                min = 1,      # Minimum value allowed
-                width = '100px'
-              )
-            )
+          div(style = "display:flex; align-items:center; justify-content:center; margin-top:15px;",
+              tags$i(class = "fas fa-users", style = "font-size:24px; margin-right:10px;color:#007436;"),
+              numericInput("num_panelists_selection", NULL, value = 12, min = 1, width = '100px')
           )
-        )
       )
-    }
+    )
   })
-  
-  # print("✅ STEP 5: Panelist customization UI rendered successfully")
 }

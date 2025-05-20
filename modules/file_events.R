@@ -4,6 +4,8 @@
 # - Checking if the file matches the selected source (Fizz or Qualtrics)
 # - Processing and transforming the data for further analysis
 
+
+
 file_events <- function(input, output, session) {
   
   # Observe when a new file is uploaded
@@ -27,7 +29,7 @@ file_events <- function(input, output, session) {
   
   # Observe when the "Load Data" button is clicked
   observeEvent(input$load_button, {
-    
+
     if (is.null(file_name())) {
       # Show an error message if no file is selected
       showModal(modalDialog(
@@ -79,7 +81,7 @@ file_events <- function(input, output, session) {
               `data-dismiss` = "modal"
             )
           ))
-          
+
           file_type("qualtrics")
           source("modules/process_qualtrics.R")
           process_qualtrics_data(data)
@@ -89,7 +91,7 @@ file_events <- function(input, output, session) {
       } else if (input$source == "Fizz") {
         file_path <- input$file$datapath  
         data <- readxl::read_excel(file_path)  
-
+        
         # Validate the file format
         if (colnames(data)[1] != "Identification") {
           showModal(modalDialog(
@@ -119,7 +121,7 @@ file_events <- function(input, output, session) {
               `data-dismiss` = "modal"
             )
           ))
-          
+
           file_type("fizz")
           source("modules/process_fizz.R")
           process_fizz_data(data)

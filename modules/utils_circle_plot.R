@@ -8,7 +8,7 @@
   #' @param puissance_df data.frame, table des moyennes de puissance (avec product, type, avg_puissance)
   #' @param num_descriptors integer
   #' @param equalDescriptors string "yes"/"no"
-  #' @param firstDoubleSecond string "yes"/"no"
+  #' <@param firstDoubleSecond string "yes"/"no"
   #' @param font_descriptor string (nom de la police)
 #' @param color_descriptor string (hex color)
 #' @param selected_axes character vector, ex. c("A1","A3")
@@ -34,7 +34,11 @@ make_circle_plot <- function(
     show_labels = "show",
     selected_axes,
     axis_params_list,
-    bg_choice = "white" 
+    bg_choice = "white",
+    axis_margin_data=20,
+    spacing_scale=1,
+    axis_spacing_add=0,
+    value_text_size=4
 ) {
   # 1) Filtre la table sur le produit
   df <- result_df %>%
@@ -331,7 +335,7 @@ make_circle_plot <- function(
     mutate(
       x     = x_offset + 12 + label_horizontal_shift,
       y     = y_positions,
-      label = wrap_text(new_name_attribute)
+      label = new_name_attribute
     )
   
   
@@ -394,9 +398,7 @@ make_circle_plot <- function(
   
   
   # marge en unités « data » entre la fin du label et le début de l'axe  
-  axis_margin <- 10  
-  
-  axis_spacing <- max(40, font_size_descriptor*2)
+  axis_spacing <- (max(50, font_size_descriptor*2)+50)*spacing_scale +  axis_spacing_add
   
   # on calcule combien de caractères fait la plus longue ligne de chacun de nos labels  
   label_lengths <- vapply(
@@ -411,7 +413,7 @@ make_circle_plot <- function(
   char_width_data <- font_size_descriptor * 2.5
   
   # on se place juste à droite du label le plus long + margin  
-  base_x_arrow <- max(labels_df$x) + max_chars * char_width_data + axis_margin
+  base_x_arrow <- (max(labels_df$x) + max_chars * char_width_data + axis_margin_data)*spacing_scale
   
   
    if (length(selected_axes) > 0) {
@@ -463,7 +465,7 @@ make_circle_plot <- function(
                    y = tri_y,
                    label = round(p_val, 1),
                    color = "white",
-                   size  = 4.0,
+                   size  = value_text_size,
                    fontface = "bold",
                    family   = font_descriptor,
                    hjust    = 0.92,

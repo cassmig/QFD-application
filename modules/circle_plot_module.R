@@ -130,7 +130,11 @@ circle_plot_module <- function(input, output, session) {
       label_horizontal_shift= label_shift,
       show_labels = input$show_descriptor_labels,
       selected_axes      = selected_axes,
-      axis_params_list   = axis_params_list
+      axis_params_list   = axis_params_list,
+      axis_margin_data=20,
+      spacing_scale=1,
+      axis_spacing_add=0, 
+      value_text_size=4
     )
     
     # 5) Stocker et afficher
