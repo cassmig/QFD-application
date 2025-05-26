@@ -208,9 +208,9 @@ process_qualtrics_data <- function(data) {
   mapped_codes <- paste0("produit_", seq_along(unique_codes))
   
   # Créer un dataframe de mapping entre les anciens codes et les nouveaux
-  product_mapping <- tibble(
+  product_mapping <- tibble::tibble(
     old_product = unique_codes,
-    product = mapped_codes
+    product     = mapped_codes
   )
   
   # Fusionner la correspondance dans le tableau result
@@ -257,28 +257,31 @@ process_qualtrics_data <- function(data) {
     ) %>% 
     filter(!is.na(comment) & comment != "") %>%  # Remove empty or NA comments
     group_by(product_code) %>%
-    summarise(comments = list(unique(comment)), .groups = "drop")  #  Store as a list per product
+    summarise(comments = list(comment), .groups="drop") %>% #  Store as a list per product
+    left_join(product_mapping, by = c("product_code" = "old_product")) %>%
+    select(product_code = product, comments)
   
+    
   # Store the processed comments in a reactive value
   additional_comments(additional_comments_data)
   
-  
+
           # --------------------------------------------------------------------------------------------------------
           # 🛠 Debugging: Verify Processed Additional Comments
           # --------------------------------------------------------------------------------------------------------
-          
+
           ### Print structured comments grouped by product
-          # print("✅ DEBUG: Processed Additional Comments (Grouped by Product)")
-          # print(additional_comments_data)
-          
+          print("✅ DEBUG: Processed Additional Comments (Grouped by Product)")
+          print(additional_comments_data)
+
           ### Print comments for each product separately to confirm correct processing
-          # for (i in 1:nrow(additional_comments_data)) {
-          #   product <- additional_comments_data$product_code[i]
-          #   comments <- additional_comments_data$comments[[i]]
-          #   
-          #   print(paste("✅ DEBUG: Comments for Product", product, ":"))
-          #   print(comments)
-          # }
+          for (i in 1:nrow(additional_comments_data)) {
+            product <- additional_comments_data$product_code[i]
+            comments <- additional_comments_data$comments[[i]]
+
+            print(paste("✅ DEBUG: Comments for Product", product, ":"))
+            print(comments)
+          }
   
   
   
@@ -289,16 +292,17 @@ process_qualtrics_data <- function(data) {
   # --------------------------------------------------------------------------------------------------------
   
   # Extract additional descriptors from the dataset and reshape them into a structured format
-  additional_descriptors_data <- data %>%
-    select(ID, product_code, contains("Q13")) %>%  # Select panelist ID, product code, and Q13 descriptor fields
-    pivot_longer(
-      cols = contains("Q13"), 
-      values_to = "descriptor", 
-      names_to = "descriptor_source"
-    ) %>%
-    filter(!is.na(descriptor) & descriptor != "") %>%  # Remove empty or NA descriptors
-    group_by(product_code) %>%
-    summarise(descriptors = list(unique(descriptor)), .groups = "drop")  # Store as a list per product
+additional_descriptors_data <- data %>%
+  select(ID, product_code, contains("Q13")) %>%
+  pivot_longer(cols = contains("Q13"),
+               names_to  = "descriptor_source",
+               values_to = "descriptor") %>%
+  filter(!is.na(descriptor) & descriptor != "") %>%
+  group_by(product_code) %>%
+  summarise(descriptors = list(descriptor), .groups="drop") %>%
+  # ----> Même mapping ici
+  left_join(product_mapping, by = c("product_code" = "old_product")) %>%
+  select(product_code = product, descriptors)
   
   # Store the processed descriptors in a reactive value
   additional_descriptors(additional_descriptors_data)
@@ -309,18 +313,18 @@ process_qualtrics_data <- function(data) {
           # --------------------------------------------------------------------------------------------------------
           
           ### Print structured descriptors grouped by product
-          # print("✅ DEBUG: Processed Additional Descriptors (Grouped by Product)")
-          # print(additional_descriptors_data)
-          
+          print("✅ DEBUG: Processed Additional Descriptors (Grouped by Product)")
+          print(additional_descriptors_data)
+
           ### Print descriptors for each product separately to confirm correct processing
-          # for (i in 1:nrow(additional_descriptors_data)) {
-          #   product <- additional_descriptors_data$product_code[i]
-          #   descriptors <- additional_descriptors_data$descriptors[[i]]
-          #   
-          #   print(paste("✅ DEBUG: Descriptors for Product", product, ":"))
-          #   print(descriptors)
-          # }
-  
+          for (i in 1:nrow(additional_descriptors_data)) {
+            product <- additional_descriptors_data$product_code[i]
+            descriptors <- additional_descriptors_data$descriptors[[i]]
+
+            print(paste("✅ DEBUG: Descriptors for Product", product, ":"))
+            print(descriptors)
+          }
+
   
   
 

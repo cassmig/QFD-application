@@ -64,20 +64,38 @@ download_result <- function(input, output, session) {
     all_cols <- c("attribute", "sum_coefficients",
                   "count", "color",
                   "new_name_attribute")
-    col_labels <- c("attribute"           = "Original Descriptor",
-                    "sum_coefficients"    = "Score",
-                    "count"               = "Frequency",
-                    "color"               = "Color",
-                    "new_name_attribute"  = "Renamed Descriptor")
     
+    col_labels <- c(
+      attribute          = "Original Descriptor",
+      sum_coefficients   = "Score",
+      count               = "Frequency",
+      color               = "Color",
+      new_name_attribute  = "Descriptor"
+    )
+    
+    desired_order <- c(
+      "Original Descriptor",
+      "Descriptor",
+      "Score",
+      "Frequency",
+      "Color"
+    )
+    
+    cols_ui_order <- c(
+      "sum_coefficients",    # Score
+      "color",               # Color
+      "new_name_attribute",  # Descriptor
+      "attribute",           # Original Descriptor
+      "count"                # Frequency
+    )
+    
+ 
     # 2) Produits dispo & leurs display names
     prods <- sort(unique(result()$product))
     disp  <- make_display_names(prods)
     
     
     tagList(
-      
-      # -------- Ligne 2 : produits -------------------------------------------
       tags$strong("Select product(s) to export:"),
       checkboxGroupInput(
         inputId  = "export_selected_tables",
@@ -86,17 +104,26 @@ download_result <- function(input, output, session) {
         selected = prods,
         inline   = TRUE
       ),
-      # -------- Ligne 1 : colonnes -------------------------------------------
       tags$strong("Select columns to include:"),
       checkboxGroupInput(
-          inputId  = "export_table_columns",
-          label    = NULL,
-          choices  = setNames(all_cols, col_labels),
-          selected = all_cols,
-          inline   = TRUE        
-        )
+        inputId  = "export_table_columns",
+        label    = NULL,
+        choices  = setNames(cols_ui_order, col_labels[cols_ui_order]),
+        selected = c("new_name_attribute", "sum_coefficients", "color"),
+        inline   = TRUE        
+      )
     )
   })
+  
+  observe({
+    updateCheckboxGroupInput(
+      session,
+      "export_table_columns",
+      selected = c("new_name_attribute", "sum_coefficients", "color")
+    )
+  })
+  
+  
   
   # On rafraîchit aussi dynamiquement en cas de changement de result()
   observeEvent(result(), ignoreNULL = TRUE, {
@@ -121,10 +148,10 @@ download_result <- function(input, output, session) {
     filename = function() {
       ext <- switch(input$export_table_format,
                     "Excel (.xlsx)" = ".xlsx",
-                    "CSV (.csv)" = ".zip",
-                    "PNG (.png)" = "zip",   # PNG multiple → zip
-                    "PDF (.pdf)" = "pdf")
-      
+                    "CSV (.csv)"   = ".zip",
+                    "PDF (.pdf)"   = if (length(input$export_selected_tables)>1) ".zip" else ".pdf",
+                    "PNG (.png)"   = if (length(input$export_selected_tables)>1) ".zip" else ".png")
+
       paste0("QFD_Results_", Sys.Date(),".", ext)
     },
     
@@ -140,16 +167,34 @@ download_result <- function(input, output, session) {
         prods      <- input$export_selected_tables
         disp_names <- make_display_names(prods)
         
+        col_labels <- c(
+          attribute            = "Original Descriptor",
+          new_name_attribute   = "Descriptor",
+          sum_coefficients     = "Score",
+          count                = "Frequency",
+          color                = "Color"
+        )
+        
+        desired_order <- c(
+          "Original Descriptor",
+          "Descriptor",
+          "Score",
+          "Frequency",
+          "Color"
+        )
+        
         # Boucle par indice pour associer prod ↔ disp_name
         for (i in seq_along(prods)) {
           prod       <- prods[i]
           sheet_name <- substr(disp_names[i], 1, 31)  # Tronque à 31 caractères
           
-          # Prépare le data.frame
           df <- result() %>%
             filter(product == prod) %>%
             add_missing_export_cols(input$export_table_columns) %>%
-            select(all_of(input$export_table_columns))
+            select(all_of(input$export_table_columns)) %>%
+            rename_with(~ col_labels[.x], all_of(input$export_table_columns)) %>%
+            select(intersect(desired_order, names(.)))
+          
           
           # Ajout de la feuille et écriture des données
           addWorksheet(wb, sheetName = sheet_name)
@@ -157,15 +202,19 @@ download_result <- function(input, output, session) {
           
           # 🎨 Mise en couleur si colonne "color" sélectionnée
           if ("color" %in% input$export_table_columns) {
-            color_col_index <- which(input$export_table_columns == "color")
+            # 1) on cherche dans df la colonne renommée "Color"
+            color_col_index <- which(names(df) == "Color")
+            # 2) on boucle sur les lignes
             for (j in seq_len(nrow(df))) {
-              fill_color <- df$color[j]
+              fill_color <- df[["Color"]][j]
               if (!is.na(fill_color) && nzchar(fill_color)) {
                 addStyle(
                   wb, sheet = sheet_name,
-                  style = createStyle(fgFill = fill_color),
-                  rows = j + 1, cols = color_col_index,
-                  gridExpand = FALSE, stack = TRUE
+                  style      = createStyle(fgFill = fill_color),
+                  rows       = j + 1,     # +1 à cause de l’en-tête
+                  cols       = color_col_index,
+                  gridExpand = FALSE,
+                  stack      = TRUE
                 )
               }
             }
@@ -184,14 +233,26 @@ download_result <- function(input, output, session) {
         prods      <- input$export_selected_tables
         disp_names <- make_display_names(prods)
         
+        # Mapping des noms de colonnes et ordre désiré
+        col_labels <- c(
+          attribute            = "Original Descriptor",
+          new_name_attribute   = "Descriptor",
+          sum_coefficients     = "Score",
+          count                = "Frequency",
+          color                = "Color"
+        )
+        desired_order <- unname(col_labels)
+        
         for (i in seq_along(prods)) {
           prod      <- prods[i]
           disp_name <- disp_names[i]
-          # Prépare le df avec colonnes manquantes
+          
           df <- result() %>%
             filter(product == prod) %>%
             add_missing_export_cols(input$export_table_columns) %>%
-            select(all_of(input$export_table_columns))
+            select(all_of(input$export_table_columns)) %>%
+            rename_with(~ col_labels[.x], all_of(input$export_table_columns)) %>%
+            select(intersect(desired_order, names(.)))
           
           # Génère un nom de fichier sûr
           safe_name <- gsub("[^[:alnum:] ]", "_", disp_name)
@@ -205,182 +266,154 @@ download_result <- function(input, output, session) {
         zip::zipr(zipfile = file, files = list.files(temp_dir, full.names = TRUE), recurse = FALSE)
       }
       
-      else if (input$export_table_format == "PDF (.pdf)") {
+      else if (input$export_table_format == "PNG (.png)") {
+        tmp_dir <- tempfile()
+        dir.create(tmp_dir)
+        outputs <- character()
         
-        ## ------------------------------------------------------------------
-        ## 0. déterminer la taille max des tables
-        ## ------------------------------------------------------------------
-        dims <- purrr::map(input$export_selected_tables, function(prod) {
-          df <- result() %>%
-            dplyr::filter(product == prod) %>%
-            add_missing_export_cols(input$export_table_columns) %>%
-            dplyr::select(all_of(input$export_table_columns))
-          
-          n_row <- nrow(df); n_col <- ncol(df)
-          fill_mat <- matrix("white", n_row, n_col)
-          if ("color" %in% colnames(df)) {
-            col_idx <- which(colnames(df) == "color")
-            fill_mat[, col_idx] <- ifelse(is.na(df$color) | df$color == "", "white", df$color)
-          }
-          
-          tt  <- gridExtra::ttheme_minimal(
-            core    = list(bg_params = list(fill = fill_mat, col = NA)),
-            colhead = list(bg_params = list(fill = "grey90"),
-                           fg_params = list(fontface = "bold"))
-          )
-          tbl <- gridExtra::tableGrob(df, rows = NULL, theme = tt)
-          
-          list(tbl = tbl,
-               w   = grid::convertWidth (sum(tbl$widths ), "in", valueOnly = TRUE),
-               h   = grid::convertHeight(sum(tbl$heights), "in", valueOnly = TRUE))
-        })
+        prods      <- input$export_selected_tables
+        disp_names <- make_display_names(prods)
         
-        ## ------------------------------------------------------------------
-        ## 1. taille du device PDF
-        ## ------------------------------------------------------------------
-        margin_in      <- 0.25      # marge extérieure
-        title_space_in <- 0.45      # hauteur réservée au titre
-        pdf_w <- max(purrr::map_dbl(dims, "w")) + 2 * margin_in
-        pdf_h <- max(purrr::map_dbl(dims, "h")) + title_space_in + 2 * margin_in
-        
-        cairo_pdf(
-          file,
-          width   = pdf_w,
-          height  = pdf_h,
-          onefile = TRUE
-        )        
-        ## ------------------------------------------------------------------
-        ## 2. ordre des pages : produit_1, produit_2, …
-        ## ------------------------------------------------------------------
-        prod_list <- input$export_selected_tables[
-          order(as.numeric(gsub("\\D", "", input$export_selected_tables)))
-        ]
-        
-        ## ------------------------------------------------------------------
-        ## 3. une page par produit
-        ## ------------------------------------------------------------------
-        for (prod in prod_list) {
-          
-          tbl <- dims[[which(input$export_selected_tables == prod)]]$tbl
-          grid::grid.newpage()
-          
-          ## --- titre centré, à title_space_in - 0.1o du haut -------------
-          grid::grid.text(
-            paste("Result Table for", prod),
-            x = grid::unit(0.5, "npc"),
-            y = grid::unit(pdf_h - margin_in - 0.1, "in"),   # 0.1sous la marge
-            gp = grid::gpar(fontsize = 14, fontface = "bold"),
-            just = "centre"
-          )
-          
-          ## --- viewport pour le tableau sous le titre ----------------------
-          grid::pushViewport(
-            grid::viewport(
-              x      = grid::unit(margin_in, "in"),
-              y      = grid::unit(margin_in, "in"),
-              just   = c("left", "bottom"),
-              width  = grid::unit(pdf_w - 2 * margin_in, "in"),
-              height = grid::unit(pdf_h - 2 * margin_in - title_space_in, "in")
-            )
-          )
-          grid::grid.draw(tbl)
-          grid::popViewport()
-        }
-        
-        dev.off()
-      }
-      
-      else if (input$export_table_format == "PDF (.pdf)") {
-        
-        ## ------------------------------------------------------------------
-        ## 0. déterminer la taille max des tables
-        ## ------------------------------------------------------------------
-        dims <- purrr::map(input$export_selected_tables, function(prod) {
-          df <- result() %>%
-            dplyr::filter(product == prod) %>%
-            add_missing_export_cols(input$export_table_columns) %>%
-            dplyr::select(all_of(input$export_table_columns))
-          
-          n_row <- nrow(df); n_col <- ncol(df)
-          fill_mat <- matrix("white", n_row, n_col)
-          if ("color" %in% colnames(df)) {
-            col_idx <- which(colnames(df) == "color")
-            fill_mat[, col_idx] <- ifelse(is.na(df$color) | df$color == "", "white", df$color)
-          }
-          
-          tt  <- gridExtra::ttheme_minimal(
-            core    = list(bg_params = list(fill = fill_mat, col = NA)),
-            colhead = list(bg_params = list(fill = "grey90"),
-                           fg_params = list(fontface = "bold"))
-          )
-          tbl <- gridExtra::tableGrob(df, rows = NULL, theme = tt)
-          
-          list(tbl = tbl,
-               w   = grid::convertWidth (sum(tbl$widths ), "in", valueOnly = TRUE),
-               h   = grid::convertHeight(sum(tbl$heights), "in", valueOnly = TRUE))
-        })
-        
-        ## ------------------------------------------------------------------
-        ## 1. taille du device PDF
-        ## ------------------------------------------------------------------
-        margin_in      <- 0.25      # marge extérieure
-        title_space_in <- 0.45      # hauteur réservée au titre
-        pdf_w <- max(purrr::map_dbl(dims, "w")) + 2 * margin_in
-        pdf_h <- max(purrr::map_dbl(dims, "h")) + title_space_in + 2 * margin_in
-        
-        cairo_pdf(
-          file,
-          width   = pdf_w,
-          height  = pdf_h,
-          onefile = TRUE
+        # Mapping des noms de colonnes et ordre désiré
+        col_labels <- c(
+          attribute            = "Original Descriptor",
+          new_name_attribute   = "Descriptor",
+          sum_coefficients     = "Score",
+          count                = "Frequency",
+          color                = "Color"
         )
+        desired_order <- unname(col_labels)
         
-        ## ------------------------------------------------------------------
-        ## 2. ordre des pages
-        ## ------------------------------------------------------------------
-        prod_list  <- input$export_selected_tables
-        disp_names <- make_display_names(prod_list)
-        # si besoin de trier selon un suffixe numérique, on peut :
-        # idx_order <- order(as.numeric(gsub("\\D", "", prod_list)))
-        # prod_list  <- prod_list[idx_order]
-        # disp_names <- disp_names[idx_order]
-        
-        ## ------------------------------------------------------------------
-        ## 3. une page par produit
-        ## ------------------------------------------------------------------
-        for (i in seq_along(prod_list)) {
-          prod      <- prod_list[i]
+        for (i in seq_along(prods)) {
+          prod      <- prods[i]
           disp_name <- disp_names[i]
-          tbl       <- dims[[which(prod_list == prod)]]$tbl
           
+          df <- result() %>%
+            filter(product == prod) %>%
+            add_missing_export_cols(input$export_table_columns) %>%
+            select(all_of(input$export_table_columns)) %>%
+            rename_with(~ col_labels[.x], all_of(input$export_table_columns)) %>%
+            select(intersect(desired_order, names(.)))
+          
+          # Prépare la matrice de remplissage pour la colonne "Color"
+          n_row <- nrow(df); n_col <- ncol(df)
+          fill_mat <- matrix("white", n_row, n_col)
+          if ("Color" %in% names(df)) {
+            col_idx <- which(names(df) == "Color")
+            fill_mat[, col_idx] <- ifelse(is.na(df$Color) | df$Color == "", "white", df$Color)
+          }
+          
+          # Crée le tableGrob colorisé
+          tt <- gridExtra::ttheme_minimal(
+            core    = list(bg_params = list(fill = fill_mat, col = NA)),
+            colhead = list(bg_params = list(fill = "grey90"), fg_params = list(fontface = "bold"))
+          )
+          tbl_grob <- gridExtra::tableGrob(df, rows = NULL, theme = tt)
+          
+          # Nom de fichier sûr
+          safe_base <- gsub("[^[:alnum:] ]", "_", disp_name)
+          safe_base <- gsub("\\s+", "_", safe_base)
+          png_path  <- file.path(tmp_dir, paste0(safe_base, ".png"))
+          
+          # Render en PNG
+          ragg::agg_png(
+            filename   = png_path,
+            width      = 1200,
+            height     = 600,
+            units      = "px",
+            res        = 150,
+            background = "white"
+          )
           grid::grid.newpage()
+          grid::grid.draw(tbl_grob)
+          dev.off()
           
-          ## --- titre centré -----------------------------------------------
-          grid::grid.text(
-            disp_name,
-            x  = grid::unit(0.5, "npc"),
-            y  = grid::unit(pdf_h - margin_in - 0.1, "in"),
-            gp = grid::gpar(fontsize = 14, fontface = "bold"),
-            just = "centre"
-          )
-          
-          ## --- viewport pour le tableau -------------------------------
-          grid::pushViewport(
-            grid::viewport(
-              x      = grid::unit(margin_in, "in"),
-              y      = grid::unit(margin_in, "in"),
-              just   = c("left", "bottom"),
-              width  = grid::unit(pdf_w - 2 * margin_in, "in"),
-              height = grid::unit(pdf_h - 2 * margin_in - title_space_in, "in")
-            )
-          )
-          grid::grid.draw(tbl)
-          grid::popViewport()
+          outputs <- c(outputs, png_path)
         }
         
-        dev.off()
+        zip::zipr(zipfile = file, files = outputs, recurse = FALSE)
       }
       
+      else if (input$export_table_format == "PDF (.pdf)") {
+        
+        prods      <- input$export_selected_tables
+        disp_names <- make_display_names(prods)
+        col_labels <- c(
+          attribute            = "Original Descriptor",
+          new_name_attribute   = "Descriptor",
+          sum_coefficients     = "Score",
+          count                = "Frequency",
+          color                = "Color"
+        )
+        desired_order <- unname(col_labels)
+        
+        # découpage multi/mono-produits
+        if (length(prods) > 1) {
+          tmp <- tempfile(); dir.create(tmp); outs <- character()
+          for (i in seq_along(prods)) {
+            df <- result() %>%
+              filter(product == prods[i]) %>%
+              add_missing_export_cols(input$export_table_columns) %>%
+              select(all_of(input$export_table_columns)) %>%
+              rename_with(~ col_labels[.x], all_of(input$export_table_columns)) %>%
+              select(intersect(desired_order, names(.)))
+            
+            # préparer tableGrob colorée
+            n_row <- nrow(df); n_col <- ncol(df)
+            fill_mat <- matrix("white", n_row, n_col)
+            if ("Color" %in% names(df)) {
+              col_idx <- which(names(df)=="Color")
+              fill_mat[,col_idx] <- ifelse(is.na(df$Color)|df$Color=="","white",df$Color)
+            }
+            tt     <- gridExtra::ttheme_minimal(
+              core    = list(bg_params = list(fill = fill_mat, col = NA)),
+              colhead = list(bg_params = list(fill = "grey90"), fg_params = list(fontface="bold"))
+            )
+            tbl <- gridExtra::tableGrob(df, rows=NULL, theme=tt)
+            
+            # exporter en PDF
+            fname <- paste0(gsub("[^[:alnum:] ]","_", disp_names[i]), ".pdf")
+            Cairo::CairoPDF(
+              file   = file.path(tmp, fname),
+              width  = 1200/150,  # 1200px @150dpi = 8in
+              height = 600/150    # 600px @150dpi  = 4in
+            )
+            grid::grid.newpage(); grid::grid.draw(tbl); dev.off()
+            outs <- c(outs, file.path(tmp, fname))
+          }
+          zip::zipr(zipfile = file, files = outs, recurse = FALSE)
+        } else {
+          # un seul produit → PDF direct
+          df <- result() %>%
+            filter(product == prods) %>%
+            add_missing_export_cols(input$export_table_columns) %>%
+            select(all_of(input$export_table_columns)) %>%
+            rename_with(~ col_labels[.x], all_of(input$export_table_columns)) %>%
+            select(intersect(desired_order, names(.)))
+          
+          n_row <- nrow(df); n_col <- ncol(df)
+          fill_mat <- matrix("white", n_row, n_col)
+          if ("Color" %in% names(df)) {
+            col_idx <- which(names(df)=="Color")
+            fill_mat[,col_idx] <- ifelse(is.na(df$Color)|df$Color=="","white",df$Color)
+          }
+          tt  <- gridExtra::ttheme_minimal(
+            core    = list(bg_params = list(fill = fill_mat, col = NA)),
+            colhead = list(bg_params = list(fill = "grey90"), fg_params = list(fontface="bold"))
+          )
+          tbl <- gridExtra::tableGrob(df, rows=NULL, theme=tt)
+          
+          Cairo::CairoPDF(
+            file   = file,
+            width  = 1200/150,
+            height = 600/150
+          )
+          grid::grid.newpage(); grid::grid.draw(tbl); dev.off()
+        }
+        
+      }
+      
+
   }
 )
   
@@ -399,7 +432,6 @@ download_result <- function(input, output, session) {
   
   
   
-  # Votre download_handler
   output$download_plot <- downloadHandler(
     
     ## ── 1) NOM DE FICHIER ───────────────────────────────────────────────
@@ -408,119 +440,45 @@ download_result <- function(input, output, session) {
       if (is.null(prods) || length(prods) == 0) {
         prods <- unique(result()$product)
       }
-      if (length(prods) > 1) {
-        return(paste0("circle_plot_", Sys.Date(), ".zip"))
+      fmt <- input$plot_export_format
+      ext <- switch(fmt,
+                    "PNG (.png)" = if (length(prods)>1) ".zip" else ".png",
+                    "SVG (.svg)" = if (length(prods)>1) ".zip" else ".svg",
+                    "PDF (.pdf)" = if (length(prods)>1) ".zip" else ".pdf"      )
+      base <- if (length(prods)==1) {
+        make_display_names(prods) |> gsub("[^[:alnum:] ]", "_", .)
+      } else {
+        paste0("circle_plot_", Sys.Date())
       }
-
-      # Un seul produit → PNG
-      base <- make_display_names(prods)
-      safe <- gsub("[^[:alnum:] ]", "_", base)
-      paste0(safe, ".png")
+      paste0(base, ext)
     },
     
     ## ── 2) CONTENU ──────────────────────────────────────────────────────
     content = function(file) {
       req(current_plot(), ui_w_px(), ui_h_px())
-      
       w_px      <- ui_w_px() * 2
       h_px      <- ui_h_px() * 2
-      bg        <- input$png_bg_choice %||% "white"
-      screen_dpi <- 72
+      dpi       <- 72
       scale_fac <- 2
       
-      # Quels axes afficher ?
+      # quels axes afficher ?
       axes_sel <- if (identical(input$plot_show_axes, "yes")) {
         input$plot_axes_selected %||% character(0)
       } else {
         character(0)
       }
       
-      # Liste des produits à exporter
+      # liste des produits à exporter
       prods <- input$plot_export_products
       if (is.null(prods) || length(prods) == 0) {
         prods <- unique(result()$product)
       }
-      
-      # On construit les display names pour tous les produits
       file_bases <- make_display_names(prods)
       
-      ## =========== CAS A) PLUSIEURS PRODUITS → ZIP ======================
-      if (length(prods) > 1) {
-        
-        tmp_dir <- tempfile(); dir.create(tmp_dir)
-        outputs <- character()
-        
-        for (i in seq_along(prods)) {
-          prod      <- prods[i]
-          base_name <- file_bases[i]
-          
-          # 1) axis_params_list par défaut
-          axis_params_list <- lapply(axes_sel, function(ax) {
-            list(
-              title      = input[[paste0("axis_title_", ax)]]   %||% ax,
-              color      = input[[paste0("axis_color_", ax)]]   %||% "#000000",
-              offset     = input[[paste0("axis_offset_", ax)]]  %||% 0,
-              thickness  = (input[[paste0("axis_thickness_", ax)]] %||% 1) * scale_fac,
-              title_size = 4 * scale_fac
-            )
-          })
-          names(axis_params_list) <- axes_sel
-          
-          # 2) générer le plot
-          plt <- make_circle_plot(
-            product               = prod,
-            result_df             = result(),
-            descriptors_df        = descriptors_df_data(),
-            puissance_df          = puissance_table(),
-            num_descriptors       = input$num_descriptors,
-            equalDescriptors      = input$equalDescriptors,
-            firstDoubleSecond     = input$firstDoubleSecond,
-            font_descriptor       = input$font_descriptor,
-            color_descriptor      = input$color_descriptor,
-            font_size_descriptor  = input$font_size_descriptor * 2,
-            plot_horizontal_shift = input$plot_horizontal_shift,
-            label_horizontal_shift= input$label_horizontal_shift,
-            show_labels           = input$show_descriptor_labels,
-            selected_axes         = axes_sel,
-            axis_params_list      = axis_params_list,
-            axis_margin_data      = 10,
-            spacing_scale         = 0.5,
-            axis_spacing_add      = 30,
-            value_text_size       = 6
-          )
-          
-          # 3) sauvegarder le PNG
-          fname    <- paste0(gsub("[^[:alnum:] ]", "_", base_name), ".png")
-          png_path <- file.path(tmp_dir, fname)
-          ragg::agg_png(
-            filename   = png_path,
-            width      = w_px, height = h_px,
-            units      = "px", res    = screen_dpi,
-            background = bg
-          )
-          print(plt); dev.off()
-          outputs <- c(outputs, png_path)
-        }
-        
-        zip::zipr(zipfile = file, files = outputs, recurse = FALSE)
-      }
-      
-      ## =========== CAS B) UN SEUL PRODUIT → PNG DIRECT ==================
-      else {
-        # on reconstruit axis_params_list
-        axis_params_list <- lapply(axes_sel, function(ax) {
-          list(
-            title      = input[[paste0("axis_title_", ax)]]   %||% ax,
-            color      = input[[paste0("axis_color_", ax)]]   %||% "#000000",
-            offset     = input[[paste0("axis_offset_", ax)]]  %||% 0,
-            thickness  = (input[[paste0("axis_thickness_", ax)]] %||% 1) * scale_fac,
-            title_size = 4 * scale_fac
-          )
-        })
-        names(axis_params_list) <- axes_sel
-        
-        plt_png <- make_circle_plot(
-          product               = prods,
+      # helper pour regénérer un plot par produit
+      make_plot_for <- function(prod) {
+        make_circle_plot(
+          product               = prod,
           result_df             = result(),
           descriptors_df        = descriptors_df_data(),
           puissance_df          = puissance_table(),
@@ -529,25 +487,102 @@ download_result <- function(input, output, session) {
           firstDoubleSecond     = input$firstDoubleSecond,
           font_descriptor       = input$font_descriptor,
           color_descriptor      = input$color_descriptor,
-          font_size_descriptor  = input$font_size_descriptor * 2,
+          font_size_descriptor  = input$font_size_descriptor * scale_fac,
           plot_horizontal_shift = input$plot_horizontal_shift,
           label_horizontal_shift= input$label_horizontal_shift,
           show_labels           = input$show_descriptor_labels,
           selected_axes         = axes_sel,
-          axis_params_list      = axis_params_list,
-          axis_margin_data      = 10,
-          spacing_scale         = 0.5,
-          axis_spacing_add      = 30,
-          value_text_size       = 6
+          axis_params_list      = {
+            lapply(axes_sel, function(ax) {
+              list(
+                title      = input[[paste0("axis_title_", ax)]]   %||% ax,
+                color      = input[[paste0("axis_color_", ax)]]   %||% "#000000",
+                offset     = input[[paste0("axis_offset_", ax)]]  %||% 0,
+                thickness  = (input[[paste0("axis_thickness_", ax)]] %||% 1) * scale_fac,
+                title_size = 4 * scale_fac
+              )
+            }) |> setNames(axes_sel)
+          },
+          axis_margin_data = 10,
+          spacing_scale    = 0.5,
+          axis_spacing_add = 30,
+          value_text_size  = 6
         )
-        
-        ragg::agg_png(
-          filename   = file,
-          width      = w_px, height = h_px,
-          units      = "px", res    = screen_dpi,
-          background = bg
-        )
-        print(plt_png); dev.off()
+      }
+      
+      fmt <- input$plot_export_format
+      
+      ## ── SVG (.svg) ───────────────────────────────────────────────
+     if (fmt == "SVG (.svg)") {
+        if (length(prods)>1) {
+          tmp <- tempfile(); dir.create(tmp); outs <- character()
+          for (i in seq_along(prods)) {
+            p <- prods[i]
+            plt <- make_plot_for(p)
+            fname <- paste0(gsub("[^[:alnum:] ]","_", file_bases[i]), ".svg")
+            svglite::svglite(file.path(tmp, fname),
+                             width = w_px/dpi, height = h_px/dpi)
+            print(plt); dev.off()
+            outs <- c(outs, file.path(tmp, fname))
+          }
+          zip::zipr(zipfile = file, files = outs, recurse = FALSE)
+        } else {
+          svglite::svglite(file, width = w_px/dpi, height = h_px/dpi)
+          print(current_plot()); dev.off()
+        }
+      }
+      
+      ## ── PDF (.pdf) ───────────────────────────────────────────────
+
+      else if (fmt == "PDF (.pdf)") {
+        if (length(prods) > 1) {
+          tmp <- tempfile(); dir.create(tmp); outs <- character()
+          for (i in seq_along(prods)) {
+            p     <- prods[i]
+            plt   <- make_plot_for(p)
+            fname <- paste0(gsub("[^[:alnum:] ]","_", file_bases[i]), ".pdf")
+            Cairo::CairoPDF(
+              file = file.path(tmp, fname),
+              width    = w_px / dpi,   # pouces
+              height   = h_px / dpi )   # pouces
+            print(plt)
+            dev.off()
+            outs <- c(outs, file.path(tmp, fname))
+          }
+          zip::zipr(zipfile = file, files = outs, recurse = FALSE)
+        } else {
+          Cairo::CairoPDF(
+            file = file,
+            width    = w_px / dpi,
+            height   = h_px / dpi
+          )
+          print(current_plot())
+          dev.off()
+        }
+      }      
+      
+      ## ── PNG (.png) ───────────────────────────────────────────────
+      else {
+        if (length(prods)>1) {
+          tmp_dir <- tempfile(); dir.create(tmp_dir); outputs <- character()
+          for (i in seq_along(prods)) {
+            p <- prods[i]
+            plt <- make_plot_for(p)
+            fname <- paste0(gsub("[^[:alnum:] ]","_", file_bases[i]), ".png")
+            path <- file.path(tmp_dir, fname)
+            ragg::agg_png(filename = path,
+                          width = w_px, height = h_px,
+                          units = "px", res = dpi)
+            print(plt); dev.off()
+            outputs <- c(outputs, path)
+          }
+          zip::zipr(zipfile = file, files = outputs, recurse = FALSE)
+        } else {
+          ragg::agg_png(filename = file,
+                        width = w_px, height = h_px,
+                        units = "px", res = dpi)
+          print(current_plot()); dev.off()
+        }
       }
     }
   )
@@ -570,7 +605,195 @@ download_result <- function(input, output, session) {
     )
   })  
   
-
+  output$download_full_report <- downloadHandler(
+    filename = function() {
+      paste0("QFD_Comprehensive_Report_", Sys.Date(), ".pdf")
+    },
+    content = function(file) {
+      # 1) Télécharger et lire le logo
+      tmp_logo <- tempfile(fileext = ".png")
+      download.file(
+        url      = "https://www.mane.com/theme/images/logo.png",
+        destfile = tmp_logo,
+        mode     = "wb"
+      )
+      logo_img <- png::readPNG(tmp_logo)
+      
+      # 2) Ouvrir le PDF (US-Letter portrait)
+      Cairo::CairoPDF(
+        file   = file,
+        width  = 8.5,
+        height = 11
+      )
+      
+      # ─── Page de couverture ─────────────────────────────────────────────
+      grid::grid.newpage()
+      grid::grid.raster(
+        logo_img,
+        x      = unit(0.5,  "in"),
+        y      = unit(10.75, "in"),
+        width  = unit(1,    "in"),
+        height = unit(1,    "in"),
+        just   = c("left", "top")
+      )
+      grid::grid.text(
+        "QFD Comprehensive Report",
+        x    = 0.5, y = 0.65,
+        gp   = grid::gpar(
+          fontsize   = 34, fontface   = "bold",
+          col        = "#007436", fontfamily = "Arial"
+        )
+      )
+      grid::grid.text(
+        paste0("Generated on ", Sys.Date()),
+        x    = 0.5, y = 0.58,
+        gp   = grid::gpar(
+          fontsize   = 14, fontface = "italic",
+          col        = "#005F30", fontfamily = "Arial"
+        )
+      )
+      
+      # ─── Pages par produit ───────────────────────────────────────────────
+      prods      <- input$export_selected_tables %||% sort(unique(result()$product))
+      disp_names <- make_display_names(prods)
+      col_labels <- c(
+        attribute          = "Original Descriptor",
+        new_name_attribute = "Descriptor",
+        sum_coefficients   = "Score",
+        count              = "Frequency",
+        color              = "Color"
+      )
+      desired_order <- c("Original Descriptor","Descriptor","Score","Frequency","Color")
+      
+      for (i in seq_along(prods)) {
+        prod      <- prods[i]
+        disp_name <- disp_names[i]
+        
+        df <- result() %>%
+          filter(product == prod) %>%
+          add_missing_export_cols(input$export_table_columns) %>%
+          select(all_of(input$export_table_columns)) %>%
+          rename_with(~ col_labels[.x], all_of(input$export_table_columns)) %>%
+          select(intersect(desired_order, names(.)))
+        
+        # matrice de couleurs
+        n_row <- nrow(df); n_col <- ncol(df)
+        fill_mat <- matrix("white", n_row, n_col)
+        if ("Color" %in% names(df)) {
+          j <- which(names(df) == "Color")
+          fill_mat[, j] <- ifelse(is.na(df$Color) | df$Color=="", "white", df$Color)
+        }
+        
+        tt <- gridExtra::ttheme_minimal(
+          core    = list(bg_params = list(fill = fill_mat, col = NA)),
+          colhead = list(bg_params = list(fill = "grey90"),
+                         fg_params = list(fontface = "bold"))
+        )
+        tbl_grob <- gridExtra::tableGrob(df, rows = NULL, theme = tt)
+        
+        # nouvelle page
+        grid::grid.newpage()
+        grid::grid.text(
+          disp_name,
+          x    = 0.5, y = 0.95,
+          gp   = grid::gpar(
+            fontsize   = 20, fontface   = "bold",
+            col        = "#007436", fontfamily = "Arial"
+          )
+        )
+        
+        # 1) Titre
+        titre_y <- 0.95
+        titre_h <- 0.05  # hauteur virtuelle de la zone titre (à ajuster)
+        grid::grid.text(
+          disp_name,
+          x  = 0.5, y = titre_y,
+          gp = grid::gpar(
+            fontsize = 20, fontface = "bold",
+            col      = "#007436", fontfamily = "Arial"
+          )
+        )
+        
+        # 2) Calculer position tableau sous le titre avec marge
+        marge     <- 0.05        # 3% de la page
+        bas_titre <- titre_y - titre_h
+        tableau_y <- bas_titre - marge
+        
+        # 3) Afficher le tableau
+        grid::pushViewport(grid::viewport(
+          x      = 0.5,
+          y      = tableau_y,
+          width  = 0.9,
+          height = 0.20,          # ajustez selon la taille de votre tableau
+          just   = c("center","top")
+        ))
+        grid::grid.draw(tbl_grob)
+        grid::popViewport()
+        
+        # --- on calcule maintenant axis_params_list comme dans download_plot() ---
+        axes_sel <- input$plot_axes_selected %||% character(0)
+        axis_params_list <- lapply(axes_sel, function(ax) {
+          list(
+            title      = input[[paste0("axis_title_", ax)]]    %||% ax,
+            color      = input[[paste0("axis_color_", ax)]]    %||% "#000000",
+            offset     = input[[paste0("axis_offset_", ax)]]   %||% 0,
+            thickness  = (input[[paste0("axis_thickness_", ax)]] %||% 1),
+            title_size = 4
+          )
+        }) |> setNames(axes_sel)
+        
+        # 1) Générer le circle_plot pour le produit courant
+        plt <- make_circle_plot(
+          product               = prod,
+          result_df             = result(),
+          descriptors_df        = descriptors_df_data(),
+          puissance_df          = puissance_table(),
+          num_descriptors       = input$num_descriptors,
+          equalDescriptors      = input$equalDescriptors,
+          firstDoubleSecond     = input$firstDoubleSecond,
+          font_descriptor       = input$font_descriptor,
+          color_descriptor      = input$color_descriptor,
+          font_size_descriptor  = input$font_size_descriptor,
+          plot_horizontal_shift = input$plot_horizontal_shift,
+          label_horizontal_shift= input$label_horizontal_shift,
+          show_labels           = input$show_descriptor_labels,
+          selected_axes         = axes_sel,
+          axis_params_list      = axis_params_list,
+          axis_margin_data      = 120,
+          spacing_scale         = 0.9,
+          axis_spacing_add      = 10,
+          value_text_size       = 3
+        )
+        
+        # --- calculs de position et marge ---
+        tbl_y   <- 0.95
+        tbl_h   <- 0.10
+        marge   <- 0.03            # 5 % de la page
+        bas_tbl <- tbl_y - tbl_h
+        plot_y  <- bas_tbl - marge # 0.60
+        
+        # 2) Créer une nouvelle viewport pour le plot juste sous le tableau
+        grid::pushViewport(
+          grid::viewport(
+            x      = 0.5,
+            y      = plot_y,       # 0.60
+            width  = 0.9,
+            height = 0.75,         # ajustez selon la place restante
+            just   = c("center","top")
+          )
+        )
+        # 3) Imprimer le ggplot dans cette viewport
+        print(plt, vp = grid::current.viewport())
+        grid::popViewport()
+        
+      }
+      
+      # 3) Fermer le PDF
+      dev.off()
+    }
+  )
+  
+  
   
   
 }

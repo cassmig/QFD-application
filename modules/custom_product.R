@@ -203,23 +203,18 @@ custom_product <- function(input, output, session) {
       # --------------------------------------------------------------------------------------------------------#
       
       observeEvent(input$save_product_images, {
-        product_data <- product_df_data()
-        
-        # print("✅ STEP 6: Save button clicked, processing product image uploads...")
-        
-        for (i in 1:nrow(product_data)) {
-          image_input <- input[[paste0("product_image_", i)]]
-          
-          if (!is.null(image_input)) {
-            product_images[[product_data$product_code[i]]] <- image_input
+        req(product_df_data())
+        pd <- product_df_data()
+        for (i in seq_len(nrow(pd))) {
+          file <- input[[paste0("product_image_", i)]]
+          if (!is.null(file)) {
+            product_images[[ pd$product_code[i] ]] <- list(
+              datapath = file$datapath,
+              mime     = file$type
+            )
           }
         }
-        
-        # 🔹 Display a success notification
-        showNotification("Product images saved successfully!", type = "message", duration = 4)
-        
-        # ## Debugging: Print success confirmation
-        # print("✅ STEP 6.1: Product images successfully saved")
+        showNotification("Product images saved successfully!", type = "message")
       })
       
     }  # End of if(file_loaded())

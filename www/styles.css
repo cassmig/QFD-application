@@ -1332,4 +1332,9 @@
   50% { background-color: #66C266; }     /* Vert clair, mais pas fluo */
 }
 
+ /* hide the default fa-download icon that Shiny injects */
+    #download_full_report .fa-download {
+      display: none !important;
+    }
+
 

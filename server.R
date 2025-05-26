@@ -9,6 +9,7 @@ source("modules/result_table.R")  # Handle result table for descriptors
 source("modules/utils_circle_plot.R")  # Handle result table for descriptors
 source("modules/circle_plot_module.R")  # Handle result table for descriptors
 source("modules/download_result.R")  # Handle result table for descriptors
+source("modules/additional_feedback.R")  # Handle result table for descriptors
 
 
 
@@ -24,6 +25,7 @@ server <- function(input, output, session) {
   result_table(input, output, session)  # Print Result table for descriptors
   circle_plot_module(input, output, session)  # Generate circle_plot
   download_result(input, output, session)  # Generate circle_plot
+  additional_feedback(input, output, session)  # Generate circle_plot
   
   
 }

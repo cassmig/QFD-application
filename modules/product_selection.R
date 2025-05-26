@@ -35,25 +35,27 @@ product_selection <- function(input, output, session) {
   output$productSelectionUI <- renderUI({
     req(file_loaded(), ordered_product_data())
     pd <- ordered_product_data()
-    div(
-      class = "product-selection-grid",
-      lapply(seq_len(nrow(pd)), function(i) {
-        code <- pd$product_code[i]
-        name <- pd$display_name[i]
-        img  <- product_images[[code]]
-        image_tag <- if (!is.null(img)) {
-          tags$img(src = base64enc::dataURI(img$datapath, img$type),
-                   class = "product-card-image")
-        } else {
-          div(class = "no-image", "No image")
-        }
-        actionButton(
-          inputId = paste0("select_product_", i),
-          label   = div(class = "product-card", image_tag,
-                        div(class = "product-card-name", name)),
-          class   = "product-card-button"
-        )
-      })
+    div(class = "product-selection-grid",
+        lapply(seq_len(nrow(pd)), function(i) {
+          code <- pd$product_code[i]
+          name <- pd$display_name[i]
+          img  <- product_images[[code]]
+          image_tag <- if (!is.null(img) && file.exists(img$datapath)) {
+            uri <- base64enc::dataURI(
+              file = img$datapath,
+              mime = img$mime
+            )
+            tags$img(src = uri, class = "product-card-image")
+          } else {
+            div(class = "no-image", "No image")
+          }
+          actionButton(
+            inputId = paste0("select_product_", i),
+            label   = div(class = "product-card", image_tag,
+                          div(class = "product-card-name", name)),
+            class   = "product-card-button"
+          )
+        })
     )
   })
   

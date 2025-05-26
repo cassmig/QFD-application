@@ -12,6 +12,16 @@ ui <- fluidPage(
     tags$script(src = "script.js")
   ),
   
+  tags$head(
+    tags$style(HTML("
+    /* hide the default fa-download icon that Shiny injects */
+    #download_full_report .fa-download {
+      display: none !important;
+    }
+  "))
+  ),
+  
+  
   # La bande en haut avec le logo, le titre, et les sections de navigation
   div(class = "header",
       img(src = "https://www.mane.com/theme/images/logo.png", alt = "Logo", style = "height: 70px; width: 70px;"), 
@@ -491,7 +501,7 @@ ui <- fluidPage(
                                  choices = c("Excel (.xlsx)", "CSV (.csv)", "PNG (.png)", "PDF (.pdf)")
                                ),
                                
-                               downloadButton("export_download_table", "Download Filtered Table", class = "download-button")
+                               downloadButton("export_download_table", "Download Table", class = "download-button")
                              ),
                              
                              # Ligne noire verticale entre les deux colonnes
@@ -516,9 +526,8 @@ ui <- fluidPage(
                                  style  = "text-align: left; margin-top: 5px; margin-bottom: 10px;",
                                  HTML(
                                    "Download the current <strong>visualization</strong> with options to customise
-       size, resolution, and background. <strong>PNG</strong> is recommended for direct
-       use, <strong>PDF/SVG</strong> for print or vector editing, and <strong>.RDS</strong>
-       for further changes in R."
+       your plot. <strong>PNG</strong> is recommended for direct
+       us and  <strong>PDF/SVG</strong> for print or vector editing."
                                  )
                                ),
                                
@@ -535,22 +544,8 @@ ui <- fluidPage(
                                
                                # ======= 1) Ligne : produits à exporter  +  choix du fond =======
                                fluidRow(
-                                 # -- Choix du fond (exclusif) ----------------------------------
-                                 column(
-                                   width = 4,
-                                   strong("Background"),
-                                   radioButtons(
-                                     inputId  = "png_bg_choice",
-                                     label    = NULL,
-                                     choices  = c("None" = "transparent",
-                                                  "White" = "white"),
-                                     selected = "white",
-                                     inline   = FALSE
-                                   )
-                                   ),
-                                   
                                    column(
-                                     width = 4,
+                                     width = 6,
                                      strong("Add intensity axes ?"),
                                      radioButtons(
                                        inputId  = "plot_show_axes",
@@ -561,7 +556,7 @@ ui <- fluidPage(
                                      )
                                    ),
                                    column(
-                                     width = 4,
+                                     width = 6,
                                      conditionalPanel(
                                        condition = "input.plot_show_axes == 'yes'",
                                        uiOutput("export_axes_selector")
@@ -576,8 +571,7 @@ ui <- fluidPage(
                                  label    = "Select export format:",
                                  choices  = c("PNG (.png)",
                                               "PDF (.pdf)",
-                                              "SVG (.svg)",
-                                              "RDS (.rds)"),
+                                              "SVG (.svg)"),
                                  selected = "PNG (.png)"
                                ),
                                
@@ -585,6 +579,24 @@ ui <- fluidPage(
                                downloadButton("download_plot", "Download Plot",
                                               class = "download-button")
                              )
+                           ),
+                           
+                           tags$hr(style = "border-color: #ccc; margin: 20px 0;"),
+                           h5(tags$strong("Export Full PDF Report"), style = "font-size:15px; color:#007436;"),
+                           div(
+                             class = "file-info-text",
+                             style = "text-align: left; margin-bottom: 10px;",
+                             HTML(
+                               "Generate a <strong>PDF report</strong> for each selected product,
+         including its <strong>Circle Plot</strong> and <strong>Results Table</strong>, with all your current settings."
+                             )
+                           ),
+                           div(style = "text-align: center; margin-bottom: 10px;",
+                               downloadButton(
+                                 outputId = "download_full_report",
+                                 label    = tagList(icon("file-pdf"), "Download Full PDF Report"),
+                                 class    = "download-button"
+                               )
                            )
                          )
                        ),
@@ -593,7 +605,7 @@ ui <- fluidPage(
                          class = "container-frame3",
                          # Dark band at the top of the container
                          div(class = "title-bar",
-                             h4(tags$strong("Additional comments"), style = "margin-bottom: 3px; font-size: 16px; color: #007436;")
+                             h4(tags$strong("Additional Feedback"), style = " margin-bottom: 3px; font-size: 16px; color: #007436;")
                          ),
                          # Container content
                          div(
@@ -602,11 +614,10 @@ ui <- fluidPage(
                            div(
                              class = "file-info-text",
                              style = "text-align: left; margin-top: 10px;",
-                             HTML("You can find <strong>additional comments </strong> for each product below.")
+                             HTML("You can find <strong>additional feedbacks </strong> for each product below.")
                            ),
-                           div(
-                             id="comments-container",
-                             uiOutput("comment_list")
+                           div(class = "content", style = "padding:12px;",
+                               uiOutput("feedback_list")
                            )
                          ))
               ),
@@ -614,239 +625,8 @@ ui <- fluidPage(
               tabPanel(
                 title = "STATISTICAL ANALYSIS", 
                 value = "statistical_analysis",
-                
-                # 1) Petit texte d'introduction
-                div(
-                  class = "intro-text",
-                  HTML("
-    <strong>Welcome to the Statistical Analysis tab.</strong> 
-    Here, you can <strong> run PCA with product-descriptor biplots, correlation matrices, 
-    and clustering. </strong>  
-    <br><em>Click <strong>‘Run Analysis’ </strong>  to generate and visualize the results.</em>
-    ")
-                ),
-                
-                div(
-                  class = "container-frame3",  # ou container-frame, selon ta préférence de style
-                  # Bande plus foncée (title-bar)
-                  div(
-                    class = "title-bar",
-                    h4("Data Subset Selection", style = "margin-bottom: 3px; font-size: 16px; color: #007436;")
-                  ),
-                  
-                  div(
-                    class = "content",
-                    
-                    # Encadré type .file-info-text
-                    div(
-                      class = "file-info-text",
-                      style = "margin-bottom: 10px;",
-                      HTML("
-        <strong>In this section, you can select which products and descriptors you wish to include in further analyses.</strong>
-        <br>
-        You can also choose whether to center and scale (standardize) the data before running PCA, correlation, or clustering.
-        <br>
-        If some descriptors are not relevant (e.g., low correlation, high p-value), you'll see an alert suggesting you remove them.
-      ")
-                    ),
-                    
-                    # Petit message au-dessus de la sélection des produits
-                    div(
-                      style = "font-weight: bold; margin-top: 10px; margin-bottom: 5px; color: #005F30;",
-                      "Please select the products you want to include in the analysis:"
-                    ),
-                    
-                    # Sélection des produits (coches groupées), avec un style pour un look professionnel
-                    div(
-                      class = "descriptor-checkbox-group",  # Classe CSS pour le style
-                      uiOutput("product_selector_ui")
-                    ),
-                    
-                    
-                    # Phrase descriptive avant la sélection des descripteurs
-                    div(
-                      style = "font-weight: bold; margin-top : 10px; margin-bottom: 5px; color: #005F30;",
-                      "Please select the descriptors you want to include in the analysis:"
-                    ),
-                    div(
-                      class = "descriptor-checkbox-group",
-                      uiOutput("descriptor_selector_ui")
-                    ),
-                    
-                    div(
-                      class = "",  # Pour garder un style cohérent
-                      style = "margin-top: 15px; font-weight: bold; margin-bottom: 5px; color: #005F30;",
-                      HTML("<strong>Would you like the data to be center-reduced (scaled)?</strong>"),
-                      
-                      radioButtons(
-                        inputId = "center_scale_choice",
-                        label = NULL,  # pas de label supplémentaire, on a déjà le texte au-dessus
-                        choices = c("Yes" = "yes", "No" = "no"),
-                        selected = "yes",  # 'Yes' coché par défaut
-                        inline = TRUE       # afficher en ligne
-                      )
-                    )
-                  )
-                ),
-                div(
-                  class = "container-frame3",
-                  div(
-                    class = "title-bar",
-                    h4("Principal Component Analysis (PCA)", 
-                       style = "margin-bottom: 3px; font-size: 16px; color: #007436;")
-                  ),
-                  div(
-                    class = "content",
-                    
-                    # 1) GRAND MESSAGE, SUR TOUTE LA LARGEUR
-                    div(
-                      class = "file-info-text",
-                      style = "width: 100%; margin-bottom: 10px;",  # 100% pour prendre toute la largeur
-                      HTML("
-        <strong>In this section, you can run an advanced PCA</strong> 
-        with various options: 
-        choose how many principal components to keep, 
-        whether to display a scree plot, 
-        and set up clustering on the resulting PCA space. 
-        You can also define the cluster color, opacity, fill style, etc. 
-        <br><em>Please configure the options on the left, 
-        then click <strong>Run PCA</strong> to visualize the results on the right.</em>
-      ")
-                    ),
-                    
-                    # 2) DEUX COLONNES : A GAUCHE (OPTIONS), A DROITE (PLOT)
-                    fluidRow(
-                      # --- COLONNE GAUCHE (OPTIONS)
-                      column(
-                        width = 4,
-                        
-                        # Bloc pour les options purement ACP
-                        div(
-                          class = "file-info-text",
-                          style = "margin-bottom: 10px;",
-                          h5("PCA Options", style="font-weight:bold; color:#005F30;"),
-                          
-                          radioButtons(
-                            inputId = "npc_method",
-                            label = "Number of principal components:",
-                            choices = c("Auto (Kaiser > 1)" = "kaiser", 
-                                        "Auto (>=80% variance)" = "variance80",
-                                        "Manual" = "manual"),
-                            selected = "kaiser",  # par défaut on fait Kaiser
-                            inline = TRUE
-                          ),
-                          
-                          
-                          # Afficher un scree plot ?
-                          checkboxInput(
-                            inputId = "show_scree",
-                            label = "Display Scree Plot?",
-                            value = FALSE
-                          ),
-                          
-                          # Afficher un cercle de corrélation ?
-                          checkboxInput(
-                            inputId = "show_corr_circle",
-                            label = "Show Correlation Circle?",
-                            value = FALSE
-                          ),
-                          
-                          # Afficher un biplot ?
-                          checkboxInput(
-                            inputId = "show_biplot",
-                            label = "Show Biplot (Products + Descriptors)?",
-                            value = TRUE
-                          )
-                        ),
-                        
-                        # Bloc pour l’option d’affichage des produits (images, noms, etc.)
-                        div(
-                          class = "file-info-text",
-                          style = "margin-bottom: 10px;",
-                          h5("Product Display", style="font-weight:bold; color:#005F30;"),
-                          radioButtons(
-                            inputId = "pca_display_option",
-                            label = "How to represent products on the plot?",
-                            choices = c("Names Only" = "names", 
-                                        "Images Only" = "images", 
-                                        "Names + Images" = "both"),
-                            selected = "names"
-                          )
-                        ),
-                        
-                        # Bloc pour les options de Clustering
-                        div(
-                          class = "file-info-text",
-                          style = "margin-bottom: 10px;",
-                          h5("Clustering Options", style="font-weight:bold; color:#005F30;"),
-                          
-                          # Afficher les clusters ou pas
-                          checkboxInput(
-                            inputId = "enable_clusters",
-                            label = "Display Clusters?",
-                            value = FALSE
-                          ),
-                          
-                          # Choisir nombre de cluster ou auto
-                          radioButtons(
-                            inputId = "cluster_choice",
-                            label = "Number of Clusters:",
-                            choices = c("Fixed k" = "fixed", "Auto" = "auto"),
-                            selected = "fixed",
-                            inline = TRUE
-                          ),
-                          
-                          # Valeur de k
-                          numericInput(
-                            inputId = "num_clusters",
-                            label = "k (if Fixed):",
-                            value = 3, 
-                            min = 2,
-                            step = 1
-                          ),
-                          
-                          # ICI on ajoute un uiOutput dynamique pour chaque cluster
-                          uiOutput("cluster_colors_ui"),
-                          
-                          # Opacité
-                          sliderInput(
-                            inputId = "cluster_opacity",
-                            label = "Cluster Opacity (alpha):",
-                            min = 0, max = 1, 
-                            value = 0.5, 
-                            step = 0.05
-                          ),
-                          
-                          # Remplissage ou pas
-                          checkboxInput(
-                            inputId = "fill_clusters",
-                            label = "Fill Clusters?",
-                            value = TRUE
-                          )
-                        ),
-                        
-                        # Bouton final
-                        actionButton(
-                          inputId = "run_pca",
-                          label = "Run PCA",
-                          class = "save-button", 
-                          style = "margin-top: 10px;"
-                        )
-                      ),
-                      
-                      # --- COLONNE DROITE (PLOT)
-                      column(
-                        width = 8,
-                        # Plot output pour afficher le biplot ACP + clusters
-                        plotOutput("pca_plot", height = "500px")
-                      )
-                    )
-                  )
-                )
-              ),
+             ),
               tabPanel(title = "AUTOMATIC REPORT", value = "automatic_report",
-                       # Votre contenu pour l'onglet AUTOMATIC REPORT
-                       h2("Contenu du rapport automatique")
               )
   )
   

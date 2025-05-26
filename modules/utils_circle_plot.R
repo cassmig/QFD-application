@@ -34,7 +34,6 @@ make_circle_plot <- function(
     show_labels = "show",
     selected_axes,
     axis_params_list,
-    bg_choice = "white",
     axis_margin_data=20,
     spacing_scale=1,
     axis_spacing_add=0,
