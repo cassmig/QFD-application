@@ -1,52 +1,101 @@
 # modules/additional_feedback.R
-# Module to display combined additional comments and descriptors for selected product
+
+# ── additional_feedback Module ─────────────────────────────────────────────
+#
+# This module generates a UI element displaying additional feedback for a
+# selected product. It shows two sections side by side:
+#  1) “Comments” – aggregated and counted from user comments
+#  2) “Additional Descriptors” – parsed from Qualtrics responses (if applicable)
+#
+# Each list is rendered dynamically based on reactive inputs:
+#   - selected_product(): currently chosen product code
+#   - additional_comments(): raw comments data
+#   - additional_descriptors(): raw descriptor strings (Qualtrics only)
+#   - descriptors_df_data(): mapping of original descriptor names to new names
+#
+# Note: Values are divided by 3 (per business rule) before displaying counts.
 
 additional_feedback <- function(input, output, session) {
-  observeEvent(selected_product(), {
-    req(selected_product())
-    req(additional_comments())
+  
+  # Renders a flexbox container with two columns: Comments and Additional Descriptors
+  output$feedback_list <- renderUI({
+    # ── 1) Establish reactive dependencies to force UI refresh when any data changes ──
+    req(
+      selected_product(),       # currently selected product code
+      additional_comments(),    # raw comments for all products
+      additional_descriptors(), # raw descriptor strings for all products
+      descriptors_df_data()     # mapping data frame: original_attribute → attribute
+    )
     
-    # 1) Filter and retrieve comments vector
+    # ── 2) Extract and aggregate comments for the selected product ─────────────────
+    #    Filter `additional_comments()` to rows matching the selected product, then
+    #    extract the 'comments' column as a list of strings.
     cmts <- additional_comments() %>%
-      dplyr::filter(product_code == selected_product()) %>%
-      dplyr::pull(comments) %>%
+      filter(product_code == selected_product()) %>%
+      pull(comments) %>%
       unlist()
+    
+    # If any comments exist, count occurrences (divide by 3 per business rule),
+    # sort in descending order, and build a label that includes the count if > 1.
     if (length(cmts) > 0) {
-      comment_counts <- tibble::tibble(comment = cmts) %>%
-        dplyr::count(comment, name = "n") %>%
-        dplyr::arrange(dplyr::desc(n)) %>%
-        dplyr::mutate(
-          label = ifelse(n > 1,
-                         paste0(comment, " (", n, "×)"),
-                         comment)
+      comment_counts <- tibble(comment = cmts) %>%
+        count(comment, name = "n") %>%
+        mutate(n = n / 3) %>%      # Business rule: divide raw count by 3
+        arrange(desc(n)) %>%
+        mutate(
+          label = ifelse(
+            n > 1,
+            paste0(comment, " (", n, ")"),
+            comment
+          )
         )
     } else {
-      comment_counts <- tibble::tibble(
+      # Create an empty tibble with the same columns, if no comments
+      comment_counts <- tibble(
         comment = character(),
         n       = integer(),
         label   = character()
       )
     }
     
-    # 2) Only for Qualtrics: filter and retrieve additional descriptors
+    # ── 3) Extract and aggregate additional descriptors (Qualtrics only) ───────────
     desc_counts <- NULL
     if (file_type() == "qualtrics") {
-      req(additional_descriptors())
-      desc <- additional_descriptors() %>%
-        dplyr::filter(product_code == selected_product()) %>%
-        dplyr::pull(descriptors) %>%
+      # Retrieve raw descriptor strings for the selected product
+      raw_desc <- additional_descriptors() %>%
+        filter(product_code == selected_product()) %>%
+        pull(descriptors) %>%
         unlist()
-      if (length(desc) > 0) {
-        desc_counts <- tibble::tibble(descriptor = desc) %>%
+      
+      if (length(raw_desc) > 0) {
+        # 3.1) Split each comma-separated string into individual tokens
+        desc_tokens <- tibble(text = raw_desc) %>%
+          tidyr::separate_rows(text, sep = "\\s*,\\s*") %>%
+          dplyr::mutate(descriptor = stringr::str_trim(text)) %>%
+          dplyr::filter(nchar(descriptor) > 0)
+        
+        # 3.2) Join tokens to the mapping data frame to replace original names
+        mapping <- descriptors_df_data()  # columns: original_attribute, attribute
+        
+        desc_counts <- desc_tokens %>%
           dplyr::count(descriptor, name = "n") %>%
-          dplyr::arrange(dplyr::desc(n)) %>%
+          dplyr::mutate(n = n / 3) %>%  # Business rule: divide raw count by 3
+          dplyr::left_join(mapping,
+                           by = c("descriptor" = "original_attribute")
+          ) %>%
           dplyr::mutate(
-            label = ifelse(n > 1,
-                           paste0(descriptor, " (", n, "×)"),
-                           descriptor)
-          )
+            # If a mapping exists, use the new `attribute` name; otherwise, keep original
+            display = ifelse(!is.na(attribute), attribute, descriptor),
+            label   = ifelse(
+              n > 1,
+              paste0(display, " (", n, ")"),
+              display
+            )
+          ) %>%
+          dplyr::arrange(desc(n))    # Sort by highest count
       } else {
-        desc_counts <- tibble::tibble(
+        # Create an empty tibble if no descriptors exist
+        desc_counts <- tibble(
           descriptor = character(),
           n          = integer(),
           label      = character()
@@ -54,53 +103,72 @@ additional_feedback <- function(input, output, session) {
       }
     }
     
-    # 3) Render combined UI into feedback_list with two columns
-    output$feedback_list <- renderUI({
-      # Container flex
-      div(style = "display:flex; justify-content:space-between; gap: 30px;",
-          # Comments column
-          div(style = "flex:1;",
-              tags$h5("Comments", style = "margin:0 0 6px; color:#007436;"),
-              if (nrow(comment_counts) > 0) {
-                tags$ul(
-                  style = "list-style:none; padding:0; margin:0;",
-                  lapply(comment_counts$label, function(txt) {
-                    tags$li(
-                      style = "display:flex; align-items:flex-start; margin-bottom:6px;",
-                      tags$i(class = "fas fa-comment-alt",
-                             style = "color:#007436; margin-right:6px;"),
-                      span(txt, style = "font-size:13px; color:#333;")
-                    )
-                  })
-                )
-              } else {
-                p("No comments for this product.",
-                  style = "font-style:italic; color:#666;")
-              }
+    # ── 4) Render the UI: two side-by-side sections ──────────────────────────────
+    div(
+      style = "display:flex; gap:30px;",
+      
+      # — Column A: Comments ─────────────────────────────────────────────────────
+      div(
+        style = "flex:1;",
+        tags$h5("Comments", style = "margin-bottom:6px; color:#007436;"),
+        
+        if (nrow(comment_counts) > 0) {
+          # If there are comments, list each with a comment icon
+          tags$ul(
+            style = "list-style:none; padding:0;",
+            lapply(comment_counts$label, function(txt) {
+              tags$li(
+                style = "margin-bottom:4px;",
+                tags$i(
+                  class = "fas fa-comment-alt",
+                  style = "color:#007436; margin-right:6px;"
+                ),
+                txt
+              )
+            })
+          )
+        } else {
+          # If no comments, show a placeholder message
+          tags$p(
+            "No comments for this product.",
+            style = "font-style:italic; color:#666;"
+          )
+        }
+      ),
+      
+      # — Column B: Additional Descriptors (Qualtrics only) ─────────────────────
+      if (!is.null(desc_counts)) {
+        div(
+          style = "flex:1;",
+          tags$h5(
+            "Additional Descriptors",
+            style = "margin-bottom:6px; color:#e08b00;"
           ),
-          # Descriptors column (only for Qualtrics)
-          if (file_type() == "qualtrics") {
-            div(style = "flex:1;",
-                tags$h5("Additional Descriptors", style = "margin:0 0 6px; color:#e08b00;"),
-                if (nrow(desc_counts) > 0) {
-                  tags$ul(
-                    style = "list-style:none; padding:0; margin:0;",
-                    lapply(desc_counts$label, function(txt) {
-                      tags$li(
-                        style = "display:flex; align-items:flex-start; margin-bottom:6px;",
-                        tags$i(class = "fas fa-tag",
-                               style = "color:#e08b00; margin-right:6px;"),
-                        span(txt, style = "font-size:13px; color:#333;")
-                      )
-                    })
-                  )
-                } else {
-                  p("No additional descriptors for this product.",
-                    style = "font-style:italic; color:#666;")
-                }
+          
+          if (nrow(desc_counts) > 0) {
+            # If there are descriptors, list each with a tag icon
+            tags$ul(
+              style = "list-style:none; padding:0;",
+              lapply(desc_counts$label, function(txt) {
+                tags$li(
+                  style = "margin-bottom:4px;",
+                  tags$i(
+                    class = "fas fa-tag",
+                    style = "color:#e08b00; margin-right:6px;"
+                  ),
+                  txt
+                )
+              })
+            )
+          } else {
+            # If no descriptors, show a placeholder message
+            tags$p(
+              "No descriptors for this product.",
+              style = "font-style:italic; color:#666;"
             )
           }
-      )
-    })
+        )
+      }
+    )
   })
 }

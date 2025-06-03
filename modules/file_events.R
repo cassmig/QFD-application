@@ -1,24 +1,20 @@
-# 📌 file_events.R - Handles file upload, validation, and processing
-# This function manages:
-# - File selection and validation
-# - Checking if the file matches the selected source (Fizz or Qualtrics)
-# - Processing and transforming the data for further analysis
-
-
+# ── modules/file_events.R ──────────────────────────────────────────────────
+# This module manages file selection, validation against the chosen source 
+# (Fizz or Qualtrics), and hands off processing to the appropriate helper.
 
 file_events <- function(input, output, session) {
   
-  # Observe when a new file is uploaded
+  # ── 1) Observe file input and update reactive file_name() ────────────────
   observeEvent(input$file, {
-    file_name(input$file$name)  # Update the reactive value with the uploaded file's name
+    file_name(input$file$name)
   })
   
-  # Observe when the source (Fizz or Qualtrics) is selected
+  # ── 2) Observe source selector (Fizz vs. Qualtrics) ──────────────────────
   observeEvent(input$source, {
-    source_name(input$source)  # Update the reactive value with the selected source
+    source_name(input$source)
   })
   
-  # Display the uploaded file name
+  # ── 3) Render the uploaded file name (or placeholder) ────────────────────
   output$file_name <- renderText({
     if (is.null(file_name())) {
       "No file selected"
@@ -27,11 +23,11 @@ file_events <- function(input, output, session) {
     }
   })
   
-  # Observe when the "Load Data" button is clicked
+  # ── 4) Handle "Load Data" button click ──────────────────────────────────
   observeEvent(input$load_button, {
-
+    
+    # If no file has been chosen, show an error modal
     if (is.null(file_name())) {
-      # Show an error message if no file is selected
       showModal(modalDialog(
         title = div(class = "blinking-error", "ERROR"),
         div(class = "message-text",
@@ -45,14 +41,14 @@ file_events <- function(input, output, session) {
           `data-dismiss` = "modal"
         )
       ))
-    } else {
       
-      # If Qualtrics is selected
+    } else {
+      # Determine which source was chosen
       if (input$source == "Qualtrics") {
-        file_path <- input$file$datapath  
-        data <- readxl::read_excel(file_path)  
+        file_path <- input$file$datapath
+        data <- readxl::read_excel(file_path)
         
-        # Validate the file format
+        # Validate that the first column is "StartDate" (Qualtrics format)
         if (colnames(data)[1] != "StartDate") {
           showModal(modalDialog(
             title = div(class = "blinking-error", "ERROR"),
@@ -68,6 +64,7 @@ file_events <- function(input, output, session) {
             )
           ))
         } else {
+          # Show success and hand off to Qualtrics processing
           showModal(modalDialog(
             title = div(class = "blinking-success", "SUCCESS"),
             div(class = "message-text",
@@ -81,18 +78,17 @@ file_events <- function(input, output, session) {
               `data-dismiss` = "modal"
             )
           ))
-
+          
           file_type("qualtrics")
           source("modules/process_qualtrics.R")
           process_qualtrics_data(data)
         }
         
-        # If Fizz is selected
       } else if (input$source == "Fizz") {
-        file_path <- input$file$datapath  
-        data <- readxl::read_excel(file_path)  
+        file_path <- input$file$datapath
+        data <- readxl::read_excel(file_path)
         
-        # Validate the file format
+        # Validate that the first column is "Identification" (Fizz format)
         if (colnames(data)[1] != "Identification") {
           showModal(modalDialog(
             title = div(class = "blinking-error", "ERROR"),
@@ -108,6 +104,7 @@ file_events <- function(input, output, session) {
             )
           ))
         } else {
+          # Show success and hand off to Fizz processing
           showModal(modalDialog(
             title = div(class = "blinking-success", "SUCCESS"),
             div(class = "message-text",
@@ -121,15 +118,14 @@ file_events <- function(input, output, session) {
               `data-dismiss` = "modal"
             )
           ))
-
+          
           file_type("fizz")
           source("modules/process_fizz.R")
           process_fizz_data(data)
-          
-          
         }
         
       } else {
+        # If neither Qualtrics nor Fizz is selected, show a generic error
         showModal(modalDialog(
           title = div(class = "blinking-error", "ERROR"),
           div(class = "message-text",
